@@ -1,0 +1,27 @@
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "Sportsona"
+    VERSION: str = "0.1.0"
+    API_V1_STR: str = "/api/v1"
+
+    # Database
+    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_USER: str = "sportsona_user"
+    POSTGRES_PASSWORD: str = "dev_password_123"
+    POSTGRES_DB: str = "sportsona"
+
+    @property
+    def DATABASE_URL(self) -> str:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
+
+    # JWT
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
+    class Config:
+        case_sensitive = True
+        env_file = ".env"
+
+settings = Settings()
