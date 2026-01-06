@@ -1,4 +1,4 @@
-# Sportsona Backend
+# Sportsona
 
 FastAPI backend for Sportsona sports aggregator platform.
 
