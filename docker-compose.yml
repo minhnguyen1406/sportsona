@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  sportsona-db:
+    image: postgres:15-alpine
+    container_name: sportsona-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sportsona_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-sportsona}
+    ports:
+      - "5432:5432"
+    volumes:
+      - sportsona_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sportsona_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sportsona-network
+
+  # FastAPI Backend
+  sportsona-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sportsona-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      POSTGRES_SERVER: sportsona-db
+      POSTGRES_USER: ${POSTGRES_USER:-sportsona_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-sportsona}
+      # Security
+      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      # FastF1
+      FASTF1_CACHE_DIR: /app/cache
+    volumes:
+      # Mount code for hot reload during development
+      - ./backend/app:/app/app:delegated
+      - ./backend/alembic:/app/alembic:delegated
+      - ./backend/scripts:/app/scripts:delegated
+      - sportsona_fastf1_cache:/app/cache
+    depends_on:
+      sportsona-db:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - sportsona-network
+
+networks:
+  sportsona-network:
+    driver: bridge
+
+volumes:
+  sportsona_postgres_data:
+  sportsona_fastf1_cache:
