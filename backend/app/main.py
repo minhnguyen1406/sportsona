@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers.f1 import f1_router
+
 app = FastAPI(
     title="Sportsona API",
     description="Sports aggregator platform API",
@@ -15,6 +17,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Routers
+app.include_router(f1_router)
 
 @app.get("/")
 def root():
