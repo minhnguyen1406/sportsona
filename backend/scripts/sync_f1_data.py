@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description='Sync F1 data to database')
     parser.add_argument('--year', type=int, required=True, help='Season year to sync')
     parser.add_argument('--results', action='store_true', help='Also sync race results for completed races')
+    parser.add_argument('--standings', action='store_true', help='Also sync standings for the season')
     args = parser.parse_args()
 
     db = SessionLocal()
@@ -52,6 +53,15 @@ def main():
                     print(f"    ✓ Round {race.round} ({race.name}): {len(results)} results")
                 except Exception as e:
                     print(f"    ✗ Round {race.round}: {e}")
+
+        # Optionally sync standings
+        if args.standings:
+            print("  Syncing standings...")
+            try:
+                stats = service.sync_standings(args.year)
+                print(f"    ✓ Round {stats['round']}: {stats['driver_standings']} driver, {stats['constructor_standings']} constructor standings")
+            except Exception as e:
+                print(f"    ✗ Standings: {e}")
 
         print("\nSync complete!")
 

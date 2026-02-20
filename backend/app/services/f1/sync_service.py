@@ -11,6 +11,8 @@ from app.models import (
     Circuit,
     Race,
     RaceResult,
+    DriverStanding,
+    ConstructorStanding,
 )
 
 # Detailed session data available from 2018+
@@ -436,3 +438,109 @@ class F1DataService:
 
         self.db.commit()
         return results
+
+    def sync_standings(self, year: int) -> dict:
+        """Sync end-of-season driver and constructor standings via Ergast."""
+        last_round = (
+            self.db.query(Race.round)
+            .filter(Race.season == year, Race.date <= date.today())
+            .order_by(Race.round.desc())
+            .first()
+        )
+        if not last_round:
+            return {"driver_standings": 0, "constructor_standings": 0}
+
+        round_num = last_round[0]
+
+        driver_count = self._sync_driver_standings(year, round_num)
+        constructor_count = self._sync_constructor_standings(year, round_num)
+        self.db.commit()
+
+        return {
+            "round": round_num,
+            "driver_standings": driver_count,
+            "constructor_standings": constructor_count,
+        }
+
+    def _sync_driver_standings(self, year: int, round_num: int) -> int:
+        """Sync driver standings for a specific season/round from Ergast."""
+        standings_data = self.ergast.get_driver_standings(year, round=round_num)
+
+        if not standings_data.content or standings_data.content[0].empty:
+            return 0
+
+        count = 0
+        for _, row in standings_data.content[0].iterrows():
+            if not pd.notna(row['position']):
+                continue
+
+            driver_id = row['driverId']
+
+            self._ensure_driver(
+                driver_id,
+                row['givenName'],
+                row['familyName'],
+                row.get('driverNationality'),
+            )
+
+            existing = self.db.query(DriverStanding).filter(
+                DriverStanding.season == year,
+                DriverStanding.round == round_num,
+                DriverStanding.driver_id == driver_id,
+            ).first()
+
+            if not existing:
+                standing = DriverStanding(
+                    season=year,
+                    round=round_num,
+                    driver_id=driver_id,
+                    position=int(row['position']),
+                    points=float(row['points']) if pd.notna(row['points']) else 0,
+                    wins=int(row['wins']) if pd.notna(row['wins']) else 0,
+                )
+                self.db.add(standing)
+                count += 1
+
+        self.db.flush()
+        return count
+
+    def _sync_constructor_standings(self, year: int, round_num: int) -> int:
+        """Sync constructor standings for a specific season/round from Ergast."""
+        standings_data = self.ergast.get_constructor_standings(year, round=round_num)
+
+        if not standings_data.content or standings_data.content[0].empty:
+            return 0
+
+        count = 0
+        for _, row in standings_data.content[0].iterrows():
+            if not pd.notna(row['position']):
+                continue
+
+            constructor_id = row['constructorId']
+
+            self._ensure_constructor(
+                constructor_id,
+                row['constructorName'],
+                row.get('constructorNationality'),
+            )
+
+            existing = self.db.query(ConstructorStanding).filter(
+                ConstructorStanding.season == year,
+                ConstructorStanding.round == round_num,
+                ConstructorStanding.constructor_id == constructor_id,
+            ).first()
+
+            if not existing:
+                standing = ConstructorStanding(
+                    season=year,
+                    round=round_num,
+                    constructor_id=constructor_id,
+                    position=int(row['position']),
+                    points=float(row['points']) if pd.notna(row['points']) else 0,
+                    wins=int(row['wins']) if pd.notna(row['wins']) else 0,
+                )
+                self.db.add(standing)
+                count += 1
+
+        self.db.flush()
+        return count
