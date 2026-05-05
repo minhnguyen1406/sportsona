@@ -7,13 +7,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_active_user
-from app.auth.schemas import Token, UserCreate, UserRead
+from app.schemas.auth import Token, UserCreate, UserRead
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.core.database import get_db
 from app.models import User
 
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)

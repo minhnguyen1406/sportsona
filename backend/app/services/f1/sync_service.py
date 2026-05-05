@@ -3,6 +3,7 @@ from fastf1.ergast import Ergast
 import pandas as pd
 from datetime import date
 from sqlalchemy.orm import Session
+from app.core.config import settings
 from app.models import (
     Season,
     Driver,
@@ -23,7 +24,7 @@ class F1DataService:
     def __init__(self, db: Session):
         self.db = db
         self.ergast = Ergast()
-        fastf1.Cache.enable_cache('/app/cache')
+        fastf1.Cache.enable_cache(settings.FASTF1_CACHE_DIR)
 
     def _ensure_season(self, year: int) -> Season:
         """Ensure season exists in database."""

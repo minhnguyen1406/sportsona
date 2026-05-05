@@ -1,4 +1,4 @@
-"""Integration tests for /auth/* routes using TestClient."""
+"""Integration tests for /api/v1/auth/* routes using TestClient."""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ from tests._seed import make_user
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/register
+# POST /api/v1/auth/register
 # ---------------------------------------------------------------------------
 
 
 class TestRegister:
     def test_creates_user(self, client, db_session):
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "new@example.com",
             "username": "newuser",
             "password": "supersecret1",
@@ -33,7 +33,7 @@ class TestRegister:
         assert db_session.query(User).count() == 1
 
     def test_password_is_hashed_not_stored_plaintext(self, client, db_session):
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "h@example.com",
             "username": "hashtest",
             "password": "supersecret1",
@@ -47,7 +47,7 @@ class TestRegister:
         make_user(db_session, email="taken@example.com", username="taken_u")
         db_session.commit()
 
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "taken@example.com",
             "username": "different",
             "password": "supersecret1",
@@ -58,7 +58,7 @@ class TestRegister:
         make_user(db_session, email="other@example.com", username="taken")
         db_session.commit()
 
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "new@example.com",
             "username": "taken",
             "password": "supersecret1",
@@ -66,7 +66,7 @@ class TestRegister:
         assert response.status_code == 409
 
     def test_invalid_email_returns_422(self, client):
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "not-an-email",
             "username": "user",
             "password": "supersecret1",
@@ -74,7 +74,7 @@ class TestRegister:
         assert response.status_code == 422
 
     def test_short_password_returns_422(self, client):
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "u@example.com",
             "username": "user",
             "password": "short",
@@ -82,7 +82,7 @@ class TestRegister:
         assert response.status_code == 422
 
     def test_short_username_returns_422(self, client):
-        response = client.post("/auth/register", json={
+        response = client.post("/api/v1/auth/register", json={
             "email": "u@example.com",
             "username": "ab",
             "password": "supersecret1",
@@ -91,7 +91,7 @@ class TestRegister:
 
 
 # ---------------------------------------------------------------------------
-# POST /auth/login
+# POST /api/v1/auth/login
 # ---------------------------------------------------------------------------
 
 
@@ -101,7 +101,7 @@ class TestLogin:
         db_session.commit()
 
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             data={"username": "alice@example.com", "password": "rightpw1"},
         )
         assert response.status_code == 200
@@ -114,14 +114,14 @@ class TestLogin:
         db_session.commit()
 
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             data={"username": "bob@example.com", "password": "WRONG"},
         )
         assert response.status_code == 401
 
     def test_unknown_email_returns_401(self, client):
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             data={"username": "nobody@example.com", "password": "anything1"},
         )
         assert response.status_code == 401
@@ -135,14 +135,14 @@ class TestLogin:
         db_session.commit()
 
         response = client.post(
-            "/auth/login",
+            "/api/v1/auth/login",
             data={"username": "off@example.com", "password": "rightpw1"},
         )
         assert response.status_code == 400
 
 
 # ---------------------------------------------------------------------------
-# GET /auth/me
+# GET /api/v1/auth/me
 # ---------------------------------------------------------------------------
 
 
@@ -150,7 +150,7 @@ def _login_token(client, db_session, **user_kwargs) -> str:
     user = make_user(db_session, **user_kwargs)
     db_session.commit()
     response = client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         data={"username": user.email, "password": user_kwargs.get("password", "correct horse battery staple")},
     )
     return response.json()["access_token"]
@@ -160,17 +160,17 @@ class TestReadCurrentUser:
     def test_returns_current_user(self, client, db_session):
         token = _login_token(client, db_session, email="me@example.com", username="me", password="rightpw1")
 
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
 
         assert response.status_code == 200
         assert response.json()["email"] == "me@example.com"
 
     def test_no_token_returns_401(self, client):
-        response = client.get("/auth/me")
+        response = client.get("/api/v1/auth/me")
         assert response.status_code == 401
 
     def test_malformed_bearer_returns_401(self, client):
-        response = client.get("/auth/me", headers={"Authorization": "Bearer not-a-jwt"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": "Bearer not-a-jwt"})
         assert response.status_code == 401
 
     def test_expired_token_returns_401(self, client, db_session):
@@ -178,7 +178,7 @@ class TestReadCurrentUser:
         db_session.commit()
         token = create_access_token(subject=user.id, expires_delta=timedelta(seconds=-10))
 
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
         assert response.json()["detail"] == "Token has expired"
 
@@ -186,12 +186,12 @@ class TestReadCurrentUser:
         # Issue a token for an ID that does not exist in the DB
         token = create_access_token(subject=99999)
 
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 
     def test_token_with_non_integer_subject_returns_401(self, client):
         token = create_access_token(subject="not-an-int")
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 
     def test_token_missing_subject_returns_401(self, client):
@@ -199,7 +199,7 @@ class TestReadCurrentUser:
         from app.core.config import settings
 
         token = _jwt.encode({"foo": "bar"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 
     def test_inactive_user_returns_400(self, client, db_session):
@@ -209,5 +209,5 @@ class TestReadCurrentUser:
         db_session.commit()
         token = create_access_token(subject=user.id)
 
-        response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 400

@@ -12,7 +12,7 @@ from app.core.database import get_db
 from app.models import User
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 _credentials_exc = HTTPException(
