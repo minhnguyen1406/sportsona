@@ -15,17 +15,25 @@ psycopg2-binary = "^2.9.10"
 alembic = "^1.14.0"
 pydantic = "^2.10.4"
 pydantic-settings = "^2.7.0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+pyjwt = "^2.10.0"
+bcrypt = "^4.2.0"
 python-multipart = "^0.0.20"
+email-validator = "^2.2.0"
 fastf1 = "^3.4.3"
 requests = "^2.32.3"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.4"
+pytest-mock = "^3.14.0"
+pytest-cov = "^6.0.0"
+httpx = "^0.28.0"
 black = "^24.10.0"
 ruff = "^0.8.4"
 mypy = "^1.14.0"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
 
 [build-system]
 requires = ["poetry-core"]
