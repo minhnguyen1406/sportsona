@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
+    # FastF1
+    FASTF1_CACHE_DIR: str = "/app/cache"
+
     class Config:
         case_sensitive = True
         env_file = ".env"
