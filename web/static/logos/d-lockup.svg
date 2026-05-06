@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="120" viewBox="0 0 280 120">
+  <rect x="0" y="20" width="80" height="80" rx="14" fill="#1A0F0A"/>
+  <text x="13" y="84" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="900" font-size="68" fill="#F4ECD8" letter-spacing="-4">S</text>
+  <circle cx="62" cy="80" r="5" fill="#F47B3F"/>
+  <text x="96" y="78" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="900" font-size="44" fill="#1A0F0A" letter-spacing="-2">Sportsona</text>
+  <circle cx="266" cy="76" r="5.5" fill="#F47B3F"/>
+</svg>

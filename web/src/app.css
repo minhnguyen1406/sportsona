@@ -43,80 +43,93 @@
   --radius: 0.5rem;
 }
 
-/* "Pole Position" — Sportsona brand palette.
-   Electric blue primary + vibrant orange accent + slate neutrals.
-   Dark mode lifts the primary for contrast on dark backgrounds. */
+/* Sportsona brand — bold cream + red + dreamsicle on ink.
+   Primary = red (brand action), Accent = dreamsicle (persona / special CTA).
+   Light mode uses ivory base; dark mode flips to ink. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* ivory page bg → #FAF6EA */
+    --background: 42 67% 94%;
+    /* ink type → #1A0F0A */
+    --foreground: 19 44% 7%;
 
+    /* white card surface for max contrast vs ivory */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 19 44% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 19 44% 7%;
 
-    --primary: 224 70% 40%; /* #1E40AF */
-    --primary-foreground: 0 0% 100%;
+    /* Primary = bold red #D63837 */
+    --primary: 0 63% 53%;
+    --primary-foreground: 39 56% 90%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary = warm cream surface */
+    --secondary: 39 56% 90%;
+    --secondary-foreground: 19 44% 7%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 39 56% 90%;
+    --muted-foreground: 17 28% 35%;
 
-    --accent: 20 95% 53%; /* #F97316 */
-    --accent-foreground: 0 0% 100%;
+    /* Accent = dreamsicle #F47B3F (the persona color) */
+    --accent: 21 89% 60%;
+    --accent-foreground: 39 56% 96%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    /* Destructive shares the brand red — fine since red is reserved for
+       attention-getting actions across the board */
+    --destructive: 0 63% 53%;
+    --destructive-foreground: 39 56% 90%;
 
     --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 39 56% 96%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Warning = warm gold #E8A92E */
+    --warning: 40 81% 54%;
+    --warning-foreground: 19 44% 7%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 224 70% 40%;
+    /* Borders use a warm tan — sits between cream and the page bg */
+    --border: 38 35% 82%;
+    --input: 38 35% 82%;
+    --ring: 0 63% 53%;
   }
 
   .dark {
-    --background: 222 47% 8%; /* #0B1220 */
-    --foreground: 210 40% 98%;
+    /* Ink page bg → #1A0F0A */
+    --background: 19 44% 7%;
+    /* Cream type → #F4ECD8 */
+    --foreground: 39 56% 90%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
+    --card: 19 33% 11%;
+    --card-foreground: 39 56% 90%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 19 33% 11%;
+    --popover-foreground: 39 56% 90%;
 
-    --primary: 217 91% 60%; /* #3B82F6 — lifted on dark for contrast */
-    --primary-foreground: 0 0% 100%;
+    /* Primary lifted slightly for dark surface contrast */
+    --primary: 0 73% 60%;
+    --primary-foreground: 39 56% 96%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 19 33% 18%;
+    --secondary-foreground: 39 56% 90%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 19 33% 18%;
+    --muted-foreground: 39 30% 70%;
 
-    --accent: 25 95% 63%; /* #FB923C */
-    --accent-foreground: 0 0% 100%;
+    --accent: 21 89% 65%;
+    --accent-foreground: 19 44% 7%;
 
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 73% 60%;
+    --destructive-foreground: 39 56% 96%;
 
     --success: 158 64% 52%;
-    --success-foreground: 0 0% 100%;
+    --success-foreground: 19 44% 7%;
 
-    --warning: 43 96% 56%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 43 96% 60%;
+    --warning-foreground: 19 44% 7%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 19 33% 18%;
+    --input: 19 33% 18%;
+    --ring: 0 73% 60%;
   }
 
   body {
