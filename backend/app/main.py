@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.auth import router as auth_router
 from app.routers.f1 import f1_router
+from app.routers.users import router as users_router
 
 app = FastAPI(
     title="Sportsona API",
@@ -21,6 +22,7 @@ app.add_middleware(
 
 # Routers
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(f1_router)
 
 @app.get("/")

@@ -108,6 +108,8 @@ class TestLogin:
         body = response.json()
         assert body["token_type"] == "bearer"
         assert body["access_token"]
+        assert body["refresh_token"]
+        assert body["access_token"] != body["refresh_token"]
 
     def test_wrong_password_returns_401(self, client, db_session):
         make_user(db_session, email="bob@example.com", username="bob", password="rightpw1")
@@ -199,6 +201,20 @@ class TestReadCurrentUser:
         from app.core.config import settings
 
         token = _jwt.encode({"foo": "bar"}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+        response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401
+
+    def test_access_token_with_type_but_no_sub_returns_401(self, client):
+        # Edge case: the type check passes but the sub claim is missing.
+        import jwt as _jwt
+        from app.auth.security import ACCESS_TOKEN_TYPE
+        from app.core.config import settings
+
+        token = _jwt.encode(
+            {"type": ACCESS_TOKEN_TYPE},
+            settings.SECRET_KEY,
+            algorithm=settings.ALGORITHM,
+        )
         response = client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert response.status_code == 401
 

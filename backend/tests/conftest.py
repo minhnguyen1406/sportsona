@@ -1,5 +1,12 @@
 """Shared test fixtures.
 
+We use SQLAlchemy's "external transaction" pattern so each test runs inside
+a connection-scoped transaction that is rolled back at the end. The test's
+session and any sessions opened by request handlers share the same
+connection but are otherwise independent — this surfaces real session
+lifecycle bugs (stale references, detached instances) that a single shared
+session would mask.
+
 The F1 models live in a Postgres ``f1`` schema. We emulate that on SQLite by
 ATTACHing a second database file as ``f1`` so cross-schema FKs in the metadata
 resolve. SQLite does not enforce cross-database FK constraints, but that is
@@ -37,9 +44,38 @@ def db_engine(tmp_path):
 
 
 @pytest.fixture
-def db_session(db_engine) -> Session:
-    SessionLocal = sessionmaker(bind=db_engine, autoflush=False, autocommit=False)
+def db_connection(db_engine):
+    """One connection scoped to the test, with an outer transaction that we
+    roll back on teardown. All sessions in the test bind to this connection
+    so they share an isolated view of the database.
+    """
+    connection = db_engine.connect()
+    transaction = connection.begin()
+    try:
+        yield connection
+    finally:
+        transaction.rollback()
+        connection.close()
+
+
+@pytest.fixture
+def db_session(db_connection) -> Session:
+    """Test-side session bound to ``db_connection``.
+
+    Inner ``commit()`` calls (in tests or in the SUT) close a SAVEPOINT but
+    do not end the outer transaction; we re-enter another savepoint via the
+    ``after_transaction_end`` listener so the next commit has somewhere to
+    land. This is the canonical SQLAlchemy pattern from the docs.
+    """
+    nested = db_connection.begin_nested()  # noqa: F841 — held by SQLAlchemy
+    SessionLocal = sessionmaker(bind=db_connection, autoflush=False, autocommit=False)
     session = SessionLocal()
+
+    @event.listens_for(session, "after_transaction_end")
+    def _restart_savepoint(sess, trans):
+        if trans.nested and not trans._parent.nested:
+            db_connection.begin_nested()
+
     try:
         yield session
     finally:
@@ -72,19 +108,27 @@ def service(db_session, mock_fastf1, mock_ergast):
 
 
 @pytest.fixture
-def client(db_session):
-    """FastAPI TestClient with ``get_db`` overridden to use the test session.
+def client(db_connection, db_session):
+    """FastAPI TestClient where each request gets its *own* session bound to
+    the same connection as ``db_session``.
 
-    The override yields the same session the test holds, so tests can seed
-    data with ``db_session`` and then call the API and see it.
+    Depending on ``db_session`` is intentional: it makes the test fixture's
+    nested-savepoint listener active before any request is handled, so
+    request-side commits land safely inside the outer transaction.
     """
     from fastapi.testclient import TestClient
 
     from app.core.database import get_db
     from app.main import app
 
+    RequestSession = sessionmaker(bind=db_connection, autoflush=False, autocommit=False)
+
     def _override_get_db():
-        yield db_session
+        s = RequestSession()
+        try:
+            yield s
+        finally:
+            s.close()
 
     app.dependency_overrides[get_db] = _override_get_db
     try:
