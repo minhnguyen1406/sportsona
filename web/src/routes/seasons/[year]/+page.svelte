@@ -11,6 +11,7 @@
     type RaceResponse,
     f1Api
   } from '$lib/api';
+  import { formatDate } from '$lib/date';
 
   type Tab = 'races' | 'drivers' | 'constructors';
   let tab = $state<Tab>('races');
@@ -48,14 +49,6 @@
         loading = false;
       });
   });
-
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
 
   const year = $derived($page.params.year);
 </script>

@@ -9,6 +9,7 @@
   import { ApiError, type DriverResponse, f1Api } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
   import { follows } from '$lib/follow.svelte';
+  import { formatDate } from '$lib/date';
 
   const PAGE_SIZE = 25;
 
@@ -115,7 +116,7 @@
                 {d.nationality ?? '—'}
               </td>
               <td class="px-4 py-3 hidden md:table-cell text-muted-foreground">
-                {d.date_of_birth ?? '—'}
+                {d.date_of_birth ? formatDate(d.date_of_birth) : '—'}
               </td>
               <td class="px-4 py-3 text-right">
                 <FollowButton

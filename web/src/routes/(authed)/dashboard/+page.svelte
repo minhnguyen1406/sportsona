@@ -5,6 +5,7 @@
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import { ApiError, type DashboardResponse, usersApi } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
+  import { formatDate } from '$lib/date';
 
   let dashboard = $state<DashboardResponse | null>(null);
   let loading = $state(true);
@@ -19,14 +20,6 @@
       loading = false;
     }
   });
-
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  }
 
   function ordinal(n: number | null): string {
     if (n === null) return '—';
