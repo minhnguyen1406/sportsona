@@ -11,58 +11,59 @@
 
   let { variant = 'mark', size = 40, class: className }: Props = $props();
 
+  // All proportions are derived from `size` so the mark scales cleanly.
+  const radius = $derived(Math.round(size * 0.22));
+  const sFontSize = $derived(Math.round(size * 0.85));
+  const sLetterSpacing = $derived(Math.round(size * 0.047));
+  const dotSize = $derived(Math.max(4, Math.round(size * 0.11)));
+  const dotInset = $derived(Math.round(size * 0.14));
   const wordmarkFontSize = $derived(Math.round(size * 0.7));
 </script>
 
-{#if variant === 'mark'}
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 64 64"
-    xmlns="http://www.w3.org/2000/svg"
-    class={cn(className)}
-    aria-label="Sportsona"
+{#snippet markBox()}
+  <!-- HTML+flex centering: the S sits at the dead-center of the box without
+       relying on font baseline math. The dot is absolutely positioned in
+       the bottom-right corner. -->
+  <span
+    class="relative inline-flex items-center justify-center shrink-0"
+    style:width="{size}px"
+    style:height="{size}px"
+    style:background="#1A0F0A"
+    style:border-radius="{radius}px"
   >
-    <rect width="64" height="64" rx="14" fill="#1A0F0A" />
-    <text
-      x="32"
-      y="50"
-      text-anchor="middle"
-      font-family="Inter, system-ui, sans-serif"
-      font-weight="900"
-      font-size="56"
-      fill="#F4ECD8"
-      letter-spacing="-3"
-    >S</text>
-    <circle cx="52" cy="52" r="3.5" fill="#F47B3F" />
-  </svg>
+    <span
+      class="block"
+      style:color="#F4ECD8"
+      style:font-family="Inter, system-ui, sans-serif"
+      style:font-weight="900"
+      style:font-size="{sFontSize}px"
+      style:line-height="1"
+      style:letter-spacing="-{sLetterSpacing}px"
+    >S</span>
+    <span
+      class="absolute"
+      style:bottom="{dotInset}px"
+      style:right="{dotInset}px"
+      style:width="{dotSize}px"
+      style:height="{dotSize}px"
+      style:background="#F47B3F"
+      style:border-radius="50%"
+    ></span>
+  </span>
+{/snippet}
+
+{#if variant === 'mark'}
+  <span class={cn('inline-block', className)} aria-label="Sportsona">
+    {@render markBox()}
+  </span>
 {:else}
-  <div class={cn('inline-flex items-center gap-2', className)} aria-label="Sportsona">
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <rect width="64" height="64" rx="14" fill="#1A0F0A" />
-      <text
-        x="32"
-        y="50"
-        text-anchor="middle"
-        font-family="Inter, system-ui, sans-serif"
-        font-weight="900"
-        font-size="56"
-        fill="#F4ECD8"
-        letter-spacing="-3"
-      >S</text>
-      <circle cx="52" cy="52" r="3.5" fill="#F47B3F" />
-    </svg>
+  <span class={cn('inline-flex items-center gap-2', className)} aria-label="Sportsona">
+    {@render markBox()}
     <span
       class="font-black tracking-tight text-foreground"
-      style="font-size: {wordmarkFontSize}px; line-height: 1; letter-spacing: -0.04em;"
-    >
-      Sportsona<span class="text-accent">.</span>
-    </span>
-  </div>
+      style:font-size="{wordmarkFontSize}px"
+      style:line-height="1"
+      style:letter-spacing="-0.04em"
+    >Sportsona<span class="text-accent">.</span></span>
+  </span>
 {/if}
