@@ -12,6 +12,7 @@
     type QualifyingResultResponse,
     f1Api
   } from '$lib/api';
+  import { formatLongDate } from '$lib/date';
 
   let race = $state<RaceResponse | null>(null);
   let results = $state<RaceResultResponse[]>([]);
@@ -38,13 +39,6 @@
       .finally(() => (loading = false));
   });
 
-  function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }
 </script>
 
 <div class="space-y-6">
@@ -69,7 +63,7 @@
         {#if race.circuit.country}
           · {race.circuit.country}
         {/if}
-        · {formatDate(race.date)}
+        · {formatLongDate(race.date)}
       </div>
     </header>
 

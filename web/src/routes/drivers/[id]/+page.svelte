@@ -8,6 +8,7 @@
   import { ApiError, type DriverResponse, f1Api } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
   import { follows } from '$lib/follow.svelte';
+  import { formatLongDate } from '$lib/date';
 
   let driver = $state<DriverResponse | null>(null);
   let loading = $state(true);
@@ -48,7 +49,7 @@
             <dt class="text-muted-foreground">Nationality</dt>
             <dd>{driver.nationality ?? '—'}</dd>
             <dt class="text-muted-foreground">Date of birth</dt>
-            <dd>{driver.date_of_birth ?? '—'}</dd>
+            <dd>{driver.date_of_birth ? formatLongDate(driver.date_of_birth) : '—'}</dd>
             <dt class="text-muted-foreground">Driver ID</dt>
             <dd class="font-mono text-xs">{driver.driver_id}</dd>
           </dl>
