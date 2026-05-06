@@ -45,3 +45,7 @@ docker-compose.override.yml
 # .mc files
 SPORTSONA_PROJECT_PLAN.md
 SPORTSONA_WEEK1_PLAN.md
+
+# Local tool artifacts
+.playwright-mcp/
+.claude/

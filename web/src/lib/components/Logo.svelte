@@ -2,13 +2,16 @@
   import { cn } from '$lib/utils';
 
   interface Props {
-    /** Just the icon mark (default), or wordmark */
+    /** ``mark`` = just the square icon. ``wordmark`` = icon + "Sportsona." next to it. */
     variant?: 'mark' | 'wordmark';
+    /** Side length (px) for the icon mark. Wordmark text scales relative to this. */
     size?: number;
     class?: string;
   }
 
   let { variant = 'mark', size = 40, class: className }: Props = $props();
+
+  const wordmarkFontSize = $derived(Math.round(size * 0.7));
 </script>
 
 {#if variant === 'mark'}
@@ -20,18 +23,20 @@
     class={cn(className)}
     aria-label="Sportsona"
   >
-    <rect width="64" height="64" rx="14" class="fill-primary" />
-    <path
-      d="M44 22c-3-4-9-5-13-5-7 0-11 4-11 9 0 5 3 7 12 8s11 3 11 8-4 9-12 9c-4 0-9-1-12-5"
-      stroke="hsl(var(--primary-foreground))"
-      stroke-width="5"
-      stroke-linecap="round"
-      fill="none"
-    />
-    <circle cx="50" cy="50" r="5" class="fill-accent" />
+    <rect width="64" height="64" rx="14" fill="#1A0F0A" />
+    <text
+      x="20"
+      y="49"
+      font-family="Inter, system-ui, sans-serif"
+      font-weight="900"
+      font-size="52"
+      fill="#F4ECD8"
+      letter-spacing="-3"
+    >S</text>
+    <circle cx="48" cy="46" r="4" fill="#F47B3F" />
   </svg>
 {:else}
-  <div class={cn('inline-flex items-center gap-2', className)}>
+  <div class={cn('inline-flex items-center gap-2', className)} aria-label="Sportsona">
     <svg
       width={size}
       height={size}
@@ -39,17 +44,23 @@
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <rect width="64" height="64" rx="14" class="fill-primary" />
-      <path
-        d="M44 22c-3-4-9-5-13-5-7 0-11 4-11 9 0 5 3 7 12 8s11 3 11 8-4 9-12 9c-4 0-9-1-12-5"
-        stroke="hsl(var(--primary-foreground))"
-        stroke-width="5"
-        stroke-linecap="round"
-        fill="none"
-      />
-      <circle cx="50" cy="50" r="5" class="fill-accent" />
+      <rect width="64" height="64" rx="14" fill="#1A0F0A" />
+      <text
+        x="20"
+        y="49"
+        font-family="Inter, system-ui, sans-serif"
+        font-weight="900"
+        font-size="52"
+        fill="#F4ECD8"
+        letter-spacing="-3"
+      >S</text>
+      <circle cx="48" cy="46" r="4" fill="#F47B3F" />
     </svg>
-    <span class="text-2xl font-bold tracking-tight text-primary">Sportsona</span>
-    <span class="text-2xl font-bold leading-none text-accent" aria-hidden="true">.</span>
+    <span
+      class="font-black tracking-tight text-foreground"
+      style="font-size: {wordmarkFontSize}px; line-height: 1; letter-spacing: -0.04em;"
+    >
+      Sportsona<span class="text-accent">.</span>
+    </span>
   </div>
 {/if}
