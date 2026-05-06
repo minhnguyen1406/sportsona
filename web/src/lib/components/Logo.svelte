@@ -25,15 +25,16 @@
   >
     <rect width="64" height="64" rx="14" fill="#1A0F0A" />
     <text
-      x="20"
-      y="49"
+      x="32"
+      y="50"
+      text-anchor="middle"
       font-family="Inter, system-ui, sans-serif"
       font-weight="900"
-      font-size="52"
+      font-size="56"
       fill="#F4ECD8"
       letter-spacing="-3"
     >S</text>
-    <circle cx="48" cy="46" r="4" fill="#F47B3F" />
+    <circle cx="52" cy="52" r="3.5" fill="#F47B3F" />
   </svg>
 {:else}
   <div class={cn('inline-flex items-center gap-2', className)} aria-label="Sportsona">
@@ -46,15 +47,16 @@
     >
       <rect width="64" height="64" rx="14" fill="#1A0F0A" />
       <text
-        x="20"
-        y="49"
+        x="32"
+        y="50"
+        text-anchor="middle"
         font-family="Inter, system-ui, sans-serif"
         font-weight="900"
-        font-size="52"
+        font-size="56"
         fill="#F4ECD8"
         letter-spacing="-3"
       >S</text>
-      <circle cx="48" cy="46" r="4" fill="#F47B3F" />
+      <circle cx="52" cy="52" r="3.5" fill="#F47B3F" />
     </svg>
     <span
       class="font-black tracking-tight text-foreground"

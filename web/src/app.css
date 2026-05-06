@@ -48,8 +48,8 @@
    Light mode uses ivory base; dark mode flips to ink. */
 @layer base {
   :root {
-    /* ivory page bg → #FAF6EA */
-    --background: 42 67% 94%;
+    /* white page bg */
+    --background: 0 0% 100%;
     /* ink type → #1A0F0A */
     --foreground: 19 44% 7%;
 
