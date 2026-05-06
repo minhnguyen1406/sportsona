@@ -10,6 +10,7 @@
   import { auth } from '$lib/stores/auth.svelte';
 
   let email = $state('');
+  let username = $state('');
   let password = $state('');
   let submitting = $state(false);
   let error = $state<string | null>(null);
@@ -19,15 +20,16 @@
     error = null;
     submitting = true;
     try {
+      await authApi.register(email, username, password);
+      // Auto-login on success — better UX than asking the user to log in again.
       const tokens = await authApi.login(email, password);
       auth.setTokens(tokens);
-      // Hydrate the profile so the header updates immediately.
       try {
         auth.setUser(await authApi.me());
       } catch {
-        /* ignore — token is set, /me hydrates lazily on home */
+        /* /me hydrates lazily on home */
       }
-      await goto('/');
+      await goto('/dashboard');
     } catch (err) {
       if (err instanceof ApiError) {
         error = err.detail;
@@ -44,8 +46,8 @@
   <Card class="w-full max-w-md p-8">
     <div class="flex flex-col items-center gap-3 mb-6">
       <Logo size={56} />
-      <h1 class="text-2xl font-semibold tracking-tight">Sign in to Sportsona</h1>
-      <p class="text-sm text-muted-foreground">Welcome back. Enter your credentials below.</p>
+      <h1 class="text-2xl font-semibold tracking-tight">Create your Sportsona account</h1>
+      <p class="text-sm text-muted-foreground">Track your drivers, your teams, your races.</p>
     </div>
 
     {#if error}
@@ -66,25 +68,41 @@
       </div>
 
       <div class="space-y-2">
+        <Label for="username">Username</Label>
+        <Input
+          id="username"
+          type="text"
+          autocomplete="username"
+          required
+          minlength={3}
+          maxlength={50}
+          bind:value={username}
+          placeholder="your_handle"
+        />
+      </div>
+
+      <div class="space-y-2">
         <Label for="password">Password</Label>
         <Input
           id="password"
           type="password"
-          autocomplete="current-password"
+          autocomplete="new-password"
           required
+          minlength={8}
+          maxlength={72}
           bind:value={password}
-          placeholder="••••••••"
+          placeholder="at least 8 characters"
         />
       </div>
 
       <Button type="submit" class="w-full" disabled={submitting}>
-        {submitting ? 'Signing in…' : 'Sign in'}
+        {submitting ? 'Creating account…' : 'Create account'}
       </Button>
     </form>
 
     <p class="mt-6 text-center text-sm text-muted-foreground">
-      Don't have an account yet?
-      <a href="/register" class="text-primary hover:underline">Create one</a>
+      Already have an account?
+      <a href="/login" class="text-primary hover:underline">Sign in</a>
     </p>
   </Card>
 </div>
