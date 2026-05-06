@@ -6,9 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
+import jwt
 from app.auth.dependencies import get_current_active_user
-from app.schemas.auth import Token, UserCreate, UserRead
-from app.auth.security import create_access_token, hash_password, verify_password
+from app.schemas.auth import RefreshRequest, Token, UserCreate, UserRead
+from app.auth.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    hash_password,
+    verify_password,
+)
+from app.auth.security import REFRESH_TOKEN_TYPE
 from app.core.database import get_db
 from app.models import User
 
@@ -68,7 +76,51 @@ def login(
             detail="Inactive user",
         )
 
-    return Token(access_token=create_access_token(subject=user.id))
+    return Token(
+        access_token=create_access_token(subject=user.id),
+        refresh_token=create_refresh_token(subject=user.id),
+    )
+
+
+@router.post("/refresh", response_model=Token)
+def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> Token:
+    """Exchange a valid refresh token for a new access + refresh pair.
+
+    Rotates the refresh token on every call so a leaked refresh can be
+    detected if the legitimate client and the attacker both try to refresh.
+    """
+    try:
+        claims = decode_token(payload.refresh_token, expected_type=REFRESH_TOKEN_TYPE)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token has expired",
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    try:
+        user_id = int(claims["sub"])
+    except (KeyError, TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    return Token(
+        access_token=create_access_token(subject=user.id),
+        refresh_token=create_refresh_token(subject=user.id),
+    )
 
 
 @router.get("/me", response_model=UserRead)
