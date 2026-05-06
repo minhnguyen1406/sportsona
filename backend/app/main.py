@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
+from app.auth.rate_limit import limiter
 from app.routers.auth import router as auth_router
 from app.routers.f1 import f1_router
 from app.routers.users import router as users_router
@@ -10,6 +13,11 @@ app = FastAPI(
     description="Sports aggregator platform API",
     version="0.1.0"
 )
+
+# Rate limiting (slowapi reads `app.state.limiter` and uses the registered
+# exception handler to convert RateLimitExceeded → HTTP 429).
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware for frontend
 app.add_middleware(

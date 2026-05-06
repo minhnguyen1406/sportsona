@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     # FastF1
     FASTF1_CACHE_DIR: str = "/app/cache"
 
+    # Frontend URL — used to build links inside email-verification and
+    # password-reset emails. Must be set per-environment in production.
+    FRONTEND_URL: str = "http://localhost:5173"
+
     class Config:
         case_sensitive = True
         env_file = ".env"
