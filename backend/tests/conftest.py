@@ -24,6 +24,14 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.models import Base
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Clear the in-memory rate limiter between tests so counts don't bleed."""
+    from app.auth.rate_limit import limiter
+    yield
+    limiter.reset()
+
+
 @pytest.fixture
 def db_engine(tmp_path):
     main_db = tmp_path / "main.db"
