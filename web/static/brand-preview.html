@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sportsona — Logo Concepts v6.1</title>
+    <title>Sportsona — Brand Reference</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,12 +12,7 @@
     />
     <style>
       :root {
-        --ivory: #faf6ea;
         --cream: #f4ecd8;
-        --rose-soft: #c5837f;
-        --dreamsicle-soft: #ee9461;
-        --champagne: #e5c99b;
-        --cocoa: #5c4033;
         --bold-red: #d63837;
         --bold-dreamsicle: #f47b3f;
         --bold-gold: #e8a92e;
@@ -27,21 +22,61 @@
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        background: var(--ivory);
+        background: white;
         color: var(--ink);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
         -webkit-font-smoothing: antialiased;
       }
-      .container { max-width: 1280px; margin: 0 auto; padding: 48px 24px; }
-      h1 { margin: 0; font-size: 2rem; letter-spacing: -0.02em; }
-      .version { opacity: 0.5; font-weight: 600; }
-      .subtitle { margin: 8px 0 32px; opacity: 0.7; font-size: 0.95rem; }
-      .meaning {
+      .container { max-width: 800px; margin: 0 auto; padding: 64px 24px; }
+      h1 { margin: 0 0 8px; font-size: 1.75rem; letter-spacing: -0.02em; }
+      .subtitle { margin: 0 0 32px; opacity: 0.7; font-size: 0.95rem; }
+      .mark-card {
         background: white;
         border: 1px solid var(--border);
         border-radius: 16px;
-        padding: 24px 28px;
+        padding: 48px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .mark-card img { display: block; width: 160px; height: 160px; }
+      .formula {
+        font-size: 1.4rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+      }
+      .formula .dot { color: var(--bold-dreamsicle); font-size: 1.6rem; }
+      .palette {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
         margin-bottom: 32px;
+      }
+      .swatch {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .swatch-chip {
+        width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+      .swatch-name { font-weight: 700; font-size: 0.85rem; }
+      .swatch-hex { opacity: 0.6; font-size: 0.7rem; font-family: ui-monospace, monospace; }
+      .meaning {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 24px;
+        font-size: 0.92rem;
+        line-height: 1.6;
+        opacity: 0.8;
       }
       .meaning h3 {
         margin: 0 0 8px;
@@ -50,18 +85,19 @@
         text-transform: uppercase;
         letter-spacing: 0.1em;
         color: var(--bold-red);
+        opacity: 1;
       }
-      .meaning p { margin: 0; font-size: 0.92rem; line-height: 1.6; opacity: 0.8; }
-      .meaning .formula {
-        margin-top: 12px;
-        font-size: 1.4rem;
-        font-weight: 800;
-        letter-spacing: -1px;
+      .meaning p { margin: 0; }
+      .download {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        text-decoration: none;
+        color: var(--bold-red);
       }
-      .formula .dot {
-        color: var(--bold-dreamsicle);
-        font-size: 1.6rem;
-      }
+      .download:hover { color: var(--ink); }
       .section-title {
         font-size: 0.7rem;
         font-weight: 700;
@@ -70,184 +106,38 @@
         opacity: 0.6;
         margin: 32px 0 12px;
       }
-      .palette {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 28px;
-        margin-bottom: 16px;
-        padding: 18px 20px;
-        background: var(--cream);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-      }
-      .palette.bold { background: var(--ink); }
-      .palette.bold .swatch-name,
-      .palette.bold .swatch-hex {
-        color: var(--cream);
-      }
-      .swatch { display: flex; align-items: center; gap: 10px; font-size: 0.78rem; }
-      .swatch-chip {
-        width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(0, 0, 0, 0.15);
-      }
-      .swatch-name { font-weight: 600; line-height: 1; }
-      .swatch-hex { opacity: 0.6; line-height: 1.4; font-family: ui-monospace, monospace; font-size: 0.68rem; }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 24px;
-      }
-      .card {
-        background: white;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        padding: 24px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
-      .mark-frame {
-        height: 220px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: var(--ivory);
-        border-radius: 12px;
-        padding: 16px;
-      }
-      .mark-frame img {
-        display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-      }
-      .card .tag {
-        display: inline-block;
-        font-size: 0.68rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        color: var(--bold-red);
-      }
-      .card .tag.soft { color: var(--rose-soft); }
-      .card .tag.system { color: var(--bold-dreamsicle); }
-      .card h2 { margin: 0; font-size: 1.05rem; }
-      .card p { margin: 0; font-size: 0.86rem; line-height: 1.5; opacity: 0.72; }
-      .download {
-        display: inline-flex; align-items: center; gap: 6px;
-        margin-top: auto;
-        font-size: 0.78rem; font-weight: 700;
-        text-decoration: none; color: var(--bold-red);
-      }
-      .download:hover { color: var(--ink); }
-      footer {
-        margin-top: 64px; padding-top: 24px;
-        border-top: 1px solid var(--border);
-        font-size: 0.8rem; opacity: 0.5; text-align: center;
-      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h1>Sportsona — logo concepts <span class="version">v6.1</span></h1>
-      <p class="subtitle">D updated to use C's ink palette. The mark and the wordmark now share the same brand system.</p>
+      <h1>Sportsona — brand reference</h1>
+      <p class="subtitle">Final mark and palette in use across the app.</p>
 
-      <section class="meaning">
-        <h3>What the dot means</h3>
-        <p>
-          The dreamsicle dot is the brand's <strong>persona mark</strong> — it represents <em>you</em>,
-          the individual user, inside the larger Sportsona platform. It also acts as a period after the
-          brand name (a confident statement), and visually it's the only saturated color, so it becomes
-          the signature accent across every asset.
-        </p>
-        <p class="formula">
-          Sportsona<span class="dot">.</span> &nbsp;=&nbsp; sport + persona &nbsp;=&nbsp; S<span class="dot">.</span>
-        </p>
-      </section>
+      <div class="mark-card">
+        <img src="logos/d-mark-wordmark.svg" alt="Sportsona mark" />
+        <p class="formula">Sportsona<span class="dot">.</span> &nbsp;=&nbsp; sport + persona</p>
+        <a class="download" href="logos/d-mark-wordmark.svg" download>Download SVG ↓</a>
+      </div>
 
-      <div class="section-title">Soft palette (used for A only)</div>
-      <section class="palette">
-        <div class="swatch"><div class="swatch-chip" style="background: var(--cream)"></div><div><div class="swatch-name">cream</div><div class="swatch-hex">#F4ECD8</div></div></div>
-        <div class="swatch"><div class="swatch-chip" style="background: var(--rose-soft)"></div><div><div class="swatch-name">rose</div><div class="swatch-hex">#C5837F</div></div></div>
-        <div class="swatch"><div class="swatch-chip" style="background: var(--dreamsicle-soft)"></div><div><div class="swatch-name">dreamsicle</div><div class="swatch-hex">#EE9461</div></div></div>
-        <div class="swatch"><div class="swatch-chip" style="background: var(--cocoa)"></div><div><div class="swatch-name">cocoa</div><div class="swatch-hex">#5C4033</div></div></div>
-      </section>
-
-      <div class="section-title">Bold palette (used for B–E)</div>
-      <section class="palette bold">
+      <div class="section-title">Palette</div>
+      <div class="palette">
+        <div class="swatch"><div class="swatch-chip" style="background: white"></div><div><div class="swatch-name">white</div><div class="swatch-hex">#FFFFFF</div></div></div>
         <div class="swatch"><div class="swatch-chip" style="background: var(--cream)"></div><div><div class="swatch-name">cream</div><div class="swatch-hex">#F4ECD8</div></div></div>
         <div class="swatch"><div class="swatch-chip" style="background: var(--bold-red)"></div><div><div class="swatch-name">red</div><div class="swatch-hex">#D63837</div></div></div>
         <div class="swatch"><div class="swatch-chip" style="background: var(--bold-dreamsicle)"></div><div><div class="swatch-name">dreamsicle</div><div class="swatch-hex">#F47B3F</div></div></div>
         <div class="swatch"><div class="swatch-chip" style="background: var(--bold-gold)"></div><div><div class="swatch-name">gold</div><div class="swatch-hex">#E8A92E</div></div></div>
         <div class="swatch"><div class="swatch-chip" style="background: var(--ink)"></div><div><div class="swatch-name">ink</div><div class="swatch-hex">#1A0F0A</div></div></div>
-      </section>
-
-      <div class="section-title" style="margin-top: 48px;">The marks</div>
-      <div class="grid">
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/d-mark-wordmark.svg" alt="S Mark on ink" />
-          </div>
-          <span class="tag system">★ Mark · ink + S + dot</span>
-          <h2>D — S Mark</h2>
-          <p>The square mark you described — ink background, bold cream "S", dreamsicle dot all on the same dark surface. Use as favicon, app icon, avatar.</p>
-          <a class="download" href="logos/d-mark-wordmark.svg" download>Download SVG ↓</a>
-        </article>
-
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/c-wordmark.svg" alt="Sportsona Wordmark" />
-          </div>
-          <span class="tag system">★ Wordmark · same palette</span>
-          <h2>C — Wordmark</h2>
-          <p>The horizontal version of the same idea — full "Sportsona" name with the persona dot. Use in headers and hero sections.</p>
-          <a class="download" href="logos/c-wordmark.svg" download>Download SVG ↓</a>
-        </article>
-
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/d-lockup.svg" alt="Combined lockup" />
-          </div>
-          <span class="tag system">★ Lockup · combined</span>
-          <h2>D + C — Lockup</h2>
-          <p>The mark and wordmark together as one unit. Use in marketing, splash screens, app onboarding. Reinforces the connection between the S mark and the full name.</p>
-          <a class="download" href="logos/d-lockup.svg" download>Download SVG ↓</a>
-        </article>
-
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/a-champion.svg" alt="Champion" />
-          </div>
-          <span class="tag soft">Soft palette · alt direction</span>
-          <h2>A — Champion</h2>
-          <p>The athletic-figure pictogram in the cream-washed palette. Kept around as an alternative mark; less brand-system-aligned with the C/D pairing.</p>
-          <a class="download" href="logos/a-champion.svg" download>Download SVG ↓</a>
-        </article>
-
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/b-shield-curved-s.svg" alt="Shield with curved S" />
-          </div>
-          <span class="tag">Bold palette · alt direction</span>
-          <h2>B — Shield</h2>
-          <p>Red shield with the flowing curved S. Heraldic alternative if you ever want a more "team crest" feel.</p>
-          <a class="download" href="logos/b-shield-curved-s.svg" download>Download SVG ↓</a>
-        </article>
-
-        <article class="card">
-          <div class="mark-frame">
-            <img src="logos/e-banner.svg" alt="Athletic Banner" />
-          </div>
-          <span class="tag">Bold palette · alt direction</span>
-          <h2>E — Banner</h2>
-          <p>Cream banner with red + dreamsicle stripes. Direct varsity feel; useful for sports-themed marketing surfaces.</p>
-          <a class="download" href="logos/e-banner.svg" download>Download SVG ↓</a>
-        </article>
       </div>
 
-      <footer>v6.1 — D + C now form the primary brand system. Reload <code>brand-preview.html</code> to see this version.</footer>
+      <div class="section-title">What the dot means</div>
+      <div class="meaning">
+        <p>
+          The dreamsicle dot is the brand's <strong>persona mark</strong> — it represents the
+          individual user inside the larger Sportsona platform. It also serves as the period after
+          the brand name, and is the only saturated color across every asset, making it the
+          signature accent.
+        </p>
+      </div>
     </div>
   </body>
 </html>
