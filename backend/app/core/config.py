@@ -28,6 +28,11 @@ class Settings(BaseSettings):
     # password-reset emails. Must be set per-environment in production.
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Anthropic / race recaps
+    ANTHROPIC_API_KEY: str = ""
+    RECAP_MODEL: str = "claude-opus-4-7"
+    RECAP_MAX_OUTPUT_TOKENS: int = 1500
+
     class Config:
         case_sensitive = True
         env_file = ".env"
