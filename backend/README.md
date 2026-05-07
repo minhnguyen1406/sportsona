@@ -83,6 +83,34 @@ poetry run uvicorn app.main:app --reload
 | User | sportsona_user |
 | Password | dev_password_123 |
 
+## Test User (local dev)
+
+A pre-seeded user used by the auth smoke tests, the `try_recap.py` script,
+and ad-hoc local browsing. **Local development only — never use these
+credentials anywhere else.**
+
+| Field | Value |
+|-------|-------|
+| Email | `smoketest@example.com` |
+| Username | `smoketester` |
+| Password | `testpw1234` |
+
+The user is **not** created automatically on a fresh database. To recreate
+after a DB reset, start the backend and run:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"smoketest@example.com","username":"smoketester","password":"testpw1234"}'
+```
+
+To verify it exists:
+
+```bash
+docker compose exec sportsona-db psql -U sportsona_user -d sportsona \
+  -c "SELECT id, email, username FROM users WHERE email = 'smoketest@example.com';"
+```
+
 ## Project Structure
 
 ```

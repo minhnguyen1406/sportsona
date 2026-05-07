@@ -54,6 +54,11 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="Constructor ID to follow for this run (repeatable). Defaults to top constructor.",
     )
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print SYSTEM_PROMPT + rendered USER message without calling the API.",
+    )
     return p.parse_args()
 
 
@@ -105,12 +110,29 @@ def main() -> int:
             if c and c not in user.followed_constructors:
                 user.followed_constructors.append(c)
 
-        print(f"Race:   {race.season} {race.name} (round {race.round})")
-        print(f"User:   {user.username} <{user.email}>")
-        print(f"Follow: drivers={[d.driver_id for d in user.followed_drivers]} "
-              f"teams={[c.constructor_id for c in user.followed_constructors]}")
-        print("Generating recap…\n")
+        print(f"Race:   {race.season} {race.name} (round {race.round})", file=sys.stderr)
+        print(f"User:   {user.username} <{user.email}>", file=sys.stderr)
+        print(
+            f"Follow: drivers={[d.driver_id for d in user.followed_drivers]} "
+            f"teams={[c.constructor_id for c in user.followed_constructors]}",
+            file=sys.stderr,
+        )
 
+        if args.dry_run:
+            from app.services.recap import SYSTEM_PROMPT, render_user_message
+            from app.services.recap.assembler import assemble_context
+
+            ctx = assemble_context(db, user, race)
+            user_message = render_user_message(ctx)
+
+            print("===== SYSTEM PROMPT =====")
+            print(SYSTEM_PROMPT)
+            print("\n===== USER MESSAGE =====")
+            print(user_message)
+            print("\n===== END (dry-run, no API call) =====", file=sys.stderr)
+            return 0
+
+        print("Generating recap…\n", file=sys.stderr)
         service = RecapService(db=db, llm=get_llm_client())
         recap = service.generate(user=user, race=race)
 
@@ -121,7 +143,8 @@ def main() -> int:
         print(
             f"\nmodel={gen.model}  prompt={recap.prompt_version}  latency={gen.latency_ms}ms\n"
             f"tokens: input={gen.input_tokens} output={gen.output_tokens} "
-            f"cache_read={gen.cache_read_tokens} cache_create={gen.cache_creation_tokens}"
+            f"cache_read={gen.cache_read_tokens} cache_create={gen.cache_creation_tokens}",
+            file=sys.stderr,
         )
         return 0
     finally:
