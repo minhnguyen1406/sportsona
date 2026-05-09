@@ -19,10 +19,12 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# CORS middleware for frontend
+# CORS middleware for frontend.
+# Includes the Vite default (5173) as a fallback so a dev who runs `vite --port 5173`
+# explicitly still gets through during the transition.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # SvelteKit default port
+    allow_origins=["http://localhost:4000", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
