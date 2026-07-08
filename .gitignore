@@ -49,3 +49,9 @@ SPORTSONA_WEEK1_PLAN.md
 # Local tool artifacts
 .playwright-mcp/
 .claude/
+
+# Design-iteration scratch images (root-level only)
+/*.png
+
+# Design-sync build artifact (regenerated from web/src/app.css)
+ds-bundle/

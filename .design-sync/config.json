@@ -1,0 +1,5 @@
+{
+  "projectId": "293250ea-1f25-41d8-a450-21317e625c4c",
+  "shape": "tokens-only",
+  "note": "Svelte app — Claude Design runtime is React-only, so no live components are synced. This project carries brand tokens, fonts, and guidelines only. Source of truth: web/src/app.css (Tailwind v4 + HSL CSS variables)."
+}
