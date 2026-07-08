@@ -83,6 +83,28 @@ poetry run uvicorn app.main:app --reload
 | User | sportsona_user |
 | Password | dev_password_123 |
 
+## Data sync
+
+```bash
+# Seed F1 data for a single season (idempotent)
+docker compose exec sportsona-backend \
+  python -m scripts.sync_f1_data --year 2025 --results --standings
+```
+
+## Data cleanup
+
+If duplicates appear (typically from re-running against an older data source
+that used short-form ids like `hamilton`), run:
+
+```bash
+docker compose exec -T sportsona-db psql -U sportsona_user -d sportsona \
+  < backend/scripts/cleanup_data_dupes.sql
+```
+
+The script merges duplicates (long-form id wins), normalises nationality &
+country strings, and fills in known nationalities (Ferrari → Italian, etc.).
+Idempotent — safe to re-run.
+
 ## Test User (local dev)
 
 A pre-seeded user used by the auth smoke tests, the `try_recap.py` script,
