@@ -1,6 +1,7 @@
 <script lang="ts">
   import '../app.css';
   import Logo from '$lib/components/Logo.svelte';
+  import ThemeToggle from '$lib/components/ThemeToggle.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { auth } from '$lib/stores/auth.svelte';
   import { authApi } from '$lib/api';
@@ -28,6 +29,7 @@
   }
 
   const navLinks = [
+    { href: '/ask', label: 'Ask' },
     { href: '/drivers', label: 'Drivers' },
     { href: '/constructors', label: 'Teams' },
     { href: '/seasons', label: 'Seasons' }
@@ -59,6 +61,14 @@
           {/each}
           {#if auth.isAuthenticated}
             <a
+              href="/today"
+              class="px-3 py-1.5 rounded-md transition-colors hover:bg-muted"
+              class:text-primary={isActive('/today', $page.url.pathname)}
+              class:font-medium={isActive('/today', $page.url.pathname)}
+            >
+              Today
+            </a>
+            <a
               href="/dashboard"
               class="px-3 py-1.5 rounded-md transition-colors hover:bg-muted"
               class:text-primary={isActive('/dashboard', $page.url.pathname)}
@@ -70,6 +80,7 @@
         </nav>
       </div>
       <nav class="flex items-center gap-3 text-sm">
+        <ThemeToggle />
         {#if auth.isAuthenticated}
           <span class="text-muted-foreground hidden sm:inline">
             {auth.user?.username ?? '…'}
