@@ -43,11 +43,15 @@ services:
       # lets the container boot without it, the relevant endpoints just 500.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       RECAP_MODEL: ${RECAP_MODEL:-claude-opus-4-7}
+      # Email (Resend). Empty = log-only dev mode.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Sportsona <onboarding@resend.dev>}
     volumes:
       # Mount code for hot reload during development
       - ./backend/app:/app/app:delegated
       - ./backend/alembic:/app/alembic:delegated
       - ./backend/scripts:/app/scripts:delegated
+      - ./backend/tests:/app/tests:delegated
       - sportsona_fastf1_cache:/app/cache
     depends_on:
       sportsona-db:
