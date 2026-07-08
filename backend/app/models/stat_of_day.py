@@ -2,10 +2,13 @@
 
 from datetime import datetime
 
-from sqlalchemy import Column, Date, DateTime, String, func
+from sqlalchemy import JSON, Column, Date, DateTime, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 
 from app.core.database import Base
+
+# JSONB on Postgres; falls back to plain JSON on the SQLite test harness.
+_JSON = JSON().with_variant(JSONB(), "postgresql")
 
 
 class StatOfDay(Base):
@@ -14,8 +17,8 @@ class StatOfDay(Base):
     date = Column(Date, primary_key=True)
     question = Column(String, nullable=False)
     sql = Column(String, nullable=False)
-    columns = Column(JSONB, nullable=False)
-    rows = Column(JSONB, nullable=False)
+    columns = Column(_JSON, nullable=False)
+    rows = Column(_JSON, nullable=False)
     narration = Column(String, nullable=False)
     model = Column(String, nullable=False)
     created_at = Column(
