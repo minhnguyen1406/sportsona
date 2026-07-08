@@ -281,6 +281,7 @@ export interface AskResponse {
   llm_latency_ms: number;
   db_latency_ms: number;
   cache_read_tokens: number;
+  cached: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -421,6 +422,21 @@ export const askApi = {
       json: { question },
       skipAuth: true
     });
+  }
+};
+
+export interface RecapResponse {
+  race_id: number;
+  content: string;
+  prompt_version: string;
+  model: string;
+  created_at: string;
+  cached: boolean;
+}
+
+export const recapApi = {
+  get(raceId: number): Promise<RecapResponse> {
+    return apiFetch(`/api/v1/races/${raceId}/recap`);
   }
 };
 

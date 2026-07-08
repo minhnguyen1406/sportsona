@@ -8,6 +8,7 @@ from app.core.config import settings
 from app.routers.ask import router as ask_router
 from app.routers.auth import router as auth_router
 from app.routers.f1 import f1_router
+from app.routers.recap import router as recap_router
 from app.routers.stat_of_day import router as stat_of_day_router
 from app.routers.users import router as users_router
 
@@ -55,6 +56,7 @@ app.include_router(users_router)
 app.include_router(f1_router)
 app.include_router(ask_router)
 app.include_router(stat_of_day_router)
+app.include_router(recap_router)
 
 @app.get("/")
 def root():
