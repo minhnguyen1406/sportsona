@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # password-reset emails. Must be set per-environment in production.
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Email delivery. When RESEND_API_KEY is set, verification and password-
+    # reset emails go out via Resend; empty = log-only (dev default).
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "Sportsona <onboarding@resend.dev>"
+
     # Anthropic / race recaps
     ANTHROPIC_API_KEY: str = ""
     RECAP_MODEL: str = "claude-opus-4-7"
