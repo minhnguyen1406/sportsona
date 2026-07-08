@@ -48,11 +48,16 @@ def main():
             ).order_by(Race.round).all()
 
             for race in races:
+                # Snapshot identifiers up front — after a SQL error the session
+                # is in a broken state and accessing `race.round` would trigger
+                # a lazy-load that raises PendingRollbackError, killing the loop.
+                rd, rname = race.round, race.name
                 try:
-                    results = service.sync_race_results(args.year, race.round)
-                    print(f"    ✓ Round {race.round} ({race.name}): {len(results)} results")
+                    results = service.sync_race_results(args.year, rd)
+                    print(f"    ✓ Round {rd} ({rname}): {len(results)} results")
                 except Exception as e:
-                    print(f"    ✗ Round {race.round}: {e}")
+                    db.rollback()
+                    print(f"    ✗ Round {rd}: {e}")
 
         # Optionally sync standings
         if args.standings:

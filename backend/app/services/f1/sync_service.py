@@ -80,6 +80,77 @@ class F1DataService:
             self.db.flush()
         return constructor
 
+    # ─────────────────────────────────────────────────────────────────────
+    # ID resolution
+    #
+    # Two upstreams disagree on ids: FastF1 builds "long-form" first_last
+    # ("lewis_hamilton"), Ergast emits "short-form" last only ("hamilton").
+    # Without normalisation the standings sync (always Ergast) re-creates
+    # short-form drivers next to the long-form ones the season + results
+    # sync just inserted, producing dupe rows for the same person.
+    #
+    # These resolvers pick a single canonical id by preferring an existing
+    # match in the DB. For brand-new drivers/constructors they default to
+    # long-form (matching the modern FastF1 convention) so the database
+    # converges on long-form ids over time.
+    # ─────────────────────────────────────────────────────────────────────
+    @staticmethod
+    def _ascii_fold(s: str) -> str:
+        """Strip combining accents — Hülkenberg → Hulkenberg, Räikkönen → Raikkonen.
+
+        Both upstreams (Ergast and FastF1) preserve diacritics in driver
+        names, but our SQLAlchemy primary key is a slug — if we don't fold
+        on the way in we end up with `kimi_räikkönen` AND `kimi_raikkonen`
+        as separate rows. Every long-form id we generate must pass through
+        this so the slug is stable regardless of upstream encoding.
+        """
+        import unicodedata
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+
+    @classmethod
+    def _slugify(cls, text: str) -> str:
+        """ASCII-fold + lowercase, then collapse anything non-alphanumeric to
+        a single underscore.
+
+        Handles diacritics (Räikkönen → raikkonen), spaces (Pedro de la Rosa
+        → pedro_de_la_rosa), hyphens (Jean-Éric Vergne → jean_eric_vergne),
+        and apostrophes (Jérôme d'Ambrosio → jerome_d_ambrosio) uniformly,
+        so the resolver doesn't drift between upstreams with different
+        punctuation conventions.
+        """
+        import re
+        s = cls._ascii_fold(text).lower()
+        return re.sub(r'[^a-z0-9]+', '_', s).strip('_')
+
+    # Same-person aliases. Different upstreams disagree on a driver's
+    # given_name — FastF1 returns "Andrea Kimi" for Antonelli, Ergast
+    # returns "Kimi" — and the long-form slugs differ. The slug-pair lives
+    # here so the resolver never creates the short form again.
+    _DRIVER_ALIASES: dict[str, str] = {
+        'kimi_antonelli': 'andrea_kimi_antonelli',
+    }
+
+    def _resolve_driver_id(self, ergast_id: str, given_name: str, family_name: str) -> str:
+        long_form = self._slugify(f"{given_name}_{family_name}")
+        # Collapse known same-person aliases first so both upstreams converge.
+        long_form = self._DRIVER_ALIASES.get(long_form, long_form)
+        # Already in DB as long-form → use that
+        if self.db.query(Driver.driver_id).filter(Driver.driver_id == long_form).first():
+            return long_form
+        # Else if the Ergast id is already in DB → keep using it (historical rows)
+        if ergast_id and self.db.query(Driver.driver_id).filter(Driver.driver_id == ergast_id).first():
+            return ergast_id
+        # New driver: prefer long-form going forward
+        return long_form
+
+    def _resolve_constructor_id(self, ergast_id: str, name: str) -> str:
+        long_form = self._slugify(name)
+        if self.db.query(Constructor.constructor_id).filter(Constructor.constructor_id == long_form).first():
+            return long_form
+        if ergast_id and self.db.query(Constructor.constructor_id).filter(Constructor.constructor_id == ergast_id).first():
+            return ergast_id
+        return long_form
+
     def sync_season(self, year: int) -> dict:
         """Sync all data for a season."""
         self._ensure_season(year)
@@ -221,14 +292,19 @@ class F1DataService:
         seen_drivers = set()
 
         for _, result in session.results.iterrows():
-            constructor_id = result['TeamName'].lower().replace(' ', '_').replace('-', '_')
+            # FastF1 strings can carry diacritics — resolve through the same
+            # helpers as the Ergast path so the slug is ASCII-folded and any
+            # existing row (under either id form) is reused.
+            constructor_id = self._resolve_constructor_id("", result['TeamName'])
 
             if constructor_id not in seen_constructors:
                 constructor = self._ensure_constructor(constructor_id, result['TeamName'])
                 constructors.append(constructor)
                 seen_constructors.add(constructor_id)
 
-            driver_id = f"{result['FirstName']}_{result['LastName']}".lower().replace(' ', '_')
+            driver_id = self._resolve_driver_id(
+                "", result['FirstName'], result['LastName']
+            )
 
             if driver_id not in seen_drivers:
                 driver = self._ensure_driver(
@@ -276,7 +352,9 @@ class F1DataService:
         seen_drivers = set()
 
         for _, result in results.content[0].iterrows():
-            constructor_id = result['constructorId']
+            constructor_id = self._resolve_constructor_id(
+                result['constructorId'], result['constructorName']
+            )
 
             if constructor_id not in seen_constructors:
                 constructor = self._ensure_constructor(
@@ -287,7 +365,9 @@ class F1DataService:
                 constructors.append(constructor)
                 seen_constructors.add(constructor_id)
 
-            driver_id = result['driverId']
+            driver_id = self._resolve_driver_id(
+                result['driverId'], result['givenName'], result['familyName']
+            )
 
             if driver_id not in seen_drivers:
                 dob = None
@@ -349,8 +429,12 @@ class F1DataService:
         results = []
 
         for _, result in session.results.iterrows():
-            driver_id = f"{result['FirstName']}_{result['LastName']}".lower().replace(' ', '_')
-            constructor_id = result['TeamName'].lower().replace(' ', '_').replace('-', '_')
+            # Same ASCII-folding resolver as _sync_drivers_modern so race
+            # results land on the same id as the driver row.
+            driver_id = self._resolve_driver_id(
+                "", result['FirstName'], result['LastName']
+            )
+            constructor_id = self._resolve_constructor_id("", result['TeamName'])
 
             race_result = self.db.query(RaceResult).filter(
                 RaceResult.race_id == race.id,
@@ -398,8 +482,12 @@ class F1DataService:
         results = []
 
         for _, result in ergast_results.content[0].iterrows():
-            driver_id = result['driverId']
-            constructor_id = result['constructorId']
+            driver_id = self._resolve_driver_id(
+                result['driverId'], result['givenName'], result['familyName']
+            )
+            constructor_id = self._resolve_constructor_id(
+                result['constructorId'], result['constructorName']
+            )
 
             # Ensure driver and constructor exist
             self._ensure_driver(
@@ -421,6 +509,10 @@ class F1DataService:
 
             if not race_result:
                 position = result.get('position')
+                # `totalRaceTime` is a pd.Timedelta for finishers and pd.NaT for
+                # DNFs — stringify only when present so the String column never
+                # receives a NaT (which Postgres tries to cast to timestamp).
+                race_time = result.get('totalRaceTime')
                 race_result = RaceResult(
                     race_id=race.id,
                     driver_id=driver_id,
@@ -430,7 +522,7 @@ class F1DataService:
                     position_text=result.get('positionText', str(position) if pd.notna(position) else 'R'),
                     points=float(result['points']) if pd.notna(result.get('points')) else 0,
                     laps=int(result['laps']) if pd.notna(result.get('laps')) else None,
-                    time=result.get('totalRaceTime'),
+                    time=str(race_time) if pd.notna(race_time) else None,
                     status=result.get('status')
                 )
                 self.db.add(race_result)
@@ -475,7 +567,9 @@ class F1DataService:
             if not pd.notna(row['position']):
                 continue
 
-            driver_id = row['driverId']
+            driver_id = self._resolve_driver_id(
+                row['driverId'], row['givenName'], row['familyName']
+            )
 
             self._ensure_driver(
                 driver_id,
@@ -517,7 +611,9 @@ class F1DataService:
             if not pd.notna(row['position']):
                 continue
 
-            constructor_id = row['constructorId']
+            constructor_id = self._resolve_constructor_id(
+                row['constructorId'], row['constructorName']
+            )
 
             self._ensure_constructor(
                 constructor_id,
