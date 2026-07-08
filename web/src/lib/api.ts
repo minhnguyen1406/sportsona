@@ -149,7 +149,6 @@ export interface UserRead {
   email: string;
   username: string;
   is_active: boolean;
-  is_superuser: boolean;
   is_verified: boolean;
   created_at: string;
 }
@@ -268,6 +267,20 @@ export interface DashboardResponse {
   followed_drivers: FollowedDriverDashboard[];
   followed_constructors: FollowedConstructorDashboard[];
   next_race: RaceResponse | null;
+}
+
+export interface AskResponse {
+  question: string;
+  sql: string;
+  reasoning: string;
+  columns: string[];
+  rows: unknown[][];
+  row_count: number;
+  truncated: boolean;
+  model: string;
+  llm_latency_ms: number;
+  db_latency_ms: number;
+  cache_read_tokens: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -398,5 +411,32 @@ export const f1Api = {
   },
   getQualifyingResults(id: number): Promise<QualifyingResultResponse[]> {
     return apiFetch(`/api/v1/f1/races/${id}/qualifying`);
+  }
+};
+
+export const askApi = {
+  ask(question: string): Promise<AskResponse> {
+    return apiFetch('/api/v1/ask', {
+      method: 'POST',
+      json: { question },
+      skipAuth: true
+    });
+  }
+};
+
+export interface StatOfDayResponse {
+  date: string;
+  question: string;
+  sql: string;
+  columns: string[];
+  rows: unknown[][];
+  narration: string;
+  model: string;
+  created_at: string;
+}
+
+export const statApi = {
+  today(): Promise<StatOfDayResponse> {
+    return apiFetch('/api/v1/stat-of-the-day');
   }
 };
