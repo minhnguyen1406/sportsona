@@ -4,7 +4,24 @@
     <meta charset="utf-8" />
     <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#1A0F0A" />
+    <meta name="theme-color" content="#3B1F12" />
+    <script>
+      // No-flash theme bootstrap: applies the saved theme BEFORE hydration
+      // so users never see a flash of the wrong palette on first paint.
+      (function () {
+        try {
+          var t = localStorage.getItem('theme');
+          var dark = t === 'dark' || ((!t || t === 'system') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) { /* localStorage blocked — fall back to light */ }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&family=Alfa+Slab+One&display=swap"
+      rel="stylesheet"
+    />
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover" class="bg-background text-foreground antialiased">

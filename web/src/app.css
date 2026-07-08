@@ -91,11 +91,20 @@
     --border: 38 35% 82%;
     --input: 38 35% 82%;
     --ring: 0 63% 53%;
+
+    /* Cocoa gradient — the logo mark tile palette.
+       Use as `background-image: var(--mark-cocoa)` anywhere the brand
+       cocoa surface is wanted (hero bands, badges, dark-mode page bg). */
+    --mark-cocoa-start: 15 53% 15%;  /* #3B1F12 */
+    --mark-cocoa-end: 20 67% 5%;     /* #150804 */
+    --mark-cocoa: linear-gradient(135deg, hsl(15 53% 15%), hsl(20 67% 5%));
   }
 
   .dark {
-    /* Ink page bg → #1A0F0A */
-    --background: 19 44% 7%;
+    /* Cocoa start tone as the solid background fallback. The real page
+       gets the cocoa gradient via the .dark body rule below — this HSL
+       value just keeps any `bg-background` utilities in sync. */
+    --background: 15 53% 15%;
     /* Cream type → #F4ECD8 */
     --foreground: 39 56% 90%;
 
@@ -134,5 +143,12 @@
 
   body {
     font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+
+  /* In dark mode the page wears the same cocoa gradient as the logo tile —
+     so the icon feels like a small window into the rest of the surface. */
+  .dark body {
+    background-image: var(--mark-cocoa);
+    background-attachment: fixed;
   }
 }
