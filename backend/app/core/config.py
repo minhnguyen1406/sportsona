@@ -5,6 +5,15 @@ class Settings(BaseSettings):
     VERSION: str = "0.1.0"
     API_V1_STR: str = "/api/v1"
 
+    # Deploy environment. The startup secret-key guard in main.py refuses
+    # to boot with the in-code dev default when this is anything other
+    # than "development".
+    ENVIRONMENT: str = "development"
+
+    # Public-facing API URL. When set (e.g. "https://api.sportsona.com")
+    # it populates the OpenAPI `servers` field so generated clients use HTTPS.
+    API_BASE_URL: str = ""
+
     # Database
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "sportsona_user"

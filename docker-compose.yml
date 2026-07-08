@@ -36,9 +36,13 @@ services:
       # Security
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
       ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: 10080
+      ACCESS_TOKEN_EXPIRE_MINUTES: 30
       # FastF1
       FASTF1_CACHE_DIR: /app/cache
+      # Anthropic (recap engine + /ask). Read from host .env; empty default
+      # lets the container boot without it, the relevant endpoints just 500.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RECAP_MODEL: ${RECAP_MODEL:-claude-opus-4-7}
     volumes:
       # Mount code for hot reload during development
       - ./backend/app:/app/app:delegated

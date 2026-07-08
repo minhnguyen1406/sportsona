@@ -20,6 +20,7 @@ from app.models import (
     User,
 )
 from app.schemas.auth import UserRead
+from app.schemas.errors import UNAUTHORIZED
 from app.schemas.f1 import ConstructorResponse, DriverResponse
 from app.schemas.users import (
     CurrentStanding,
@@ -31,7 +32,9 @@ from app.schemas.users import (
 )
 
 
-router = APIRouter(prefix="/api/v1/users", tags=["Users"])
+# Every endpoint in this router requires authentication, so document 401
+# once at the router level instead of repeating it on each operation.
+router = APIRouter(prefix="/api/v1/users", tags=["Users"], responses=UNAUTHORIZED)
 
 
 # Plan caps the MVP at 3 drivers / 2 constructors per user.
