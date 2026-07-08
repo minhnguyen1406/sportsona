@@ -19,7 +19,6 @@ class UserRead(BaseModel):
     email: EmailStr
     username: str
     is_active: bool
-    is_superuser: bool
     is_verified: bool
     created_at: datetime
 
@@ -32,16 +31,20 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+# JWTs are well under 1KB; capping bounds request size to deter DoS via large bodies.
+_TOKEN_MAX_LEN = 1024
+
+
 class RefreshRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(max_length=_TOKEN_MAX_LEN)
 
 
 class LogoutRequest(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(max_length=_TOKEN_MAX_LEN)
 
 
 class VerifyEmailRequest(BaseModel):
-    token: str
+    token: str = Field(max_length=_TOKEN_MAX_LEN)
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -49,7 +52,7 @@ class ForgotPasswordRequest(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    token: str
+    token: str = Field(max_length=_TOKEN_MAX_LEN)
     new_password: str = Field(min_length=8, max_length=72)
 
 

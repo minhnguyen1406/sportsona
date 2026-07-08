@@ -40,6 +40,7 @@ from app.schemas.auth import (
     UserRead,
     VerifyEmailRequest,
 )
+from app.schemas.errors import RATE_LIMITED, UNAUTHORIZED
 from app.services.email import EmailService, get_email_service
 
 
@@ -51,7 +52,12 @@ router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 # ---------------------------------------------------------------------------
 
 
-@router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/register",
+    response_model=UserRead,
+    status_code=status.HTTP_201_CREATED,
+    responses=RATE_LIMITED,
+)
 @limiter.limit("10/hour")
 def register(request: Request, payload: UserCreate, db: Session = Depends(get_db)) -> User:
     """Create a new user account.
@@ -82,7 +88,11 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
     return user
 
 
-@router.post("/login", response_model=Token)
+@router.post(
+    "/login",
+    response_model=Token,
+    responses={**UNAUTHORIZED, **RATE_LIMITED},
+)
 @limiter.limit("10/minute")
 def login(
     request: Request,
@@ -127,7 +137,7 @@ def _decode_refresh_or_401(token: str) -> dict:
         )
 
 
-@router.post("/refresh", response_model=Token)
+@router.post("/refresh", response_model=Token, responses=UNAUTHORIZED)
 def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> Token:
     """Exchange a valid refresh token for a new access + refresh pair.
 
@@ -189,7 +199,7 @@ def logout(payload: LogoutRequest, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 
-@router.get("/me", response_model=UserRead)
+@router.get("/me", response_model=UserRead, responses=UNAUTHORIZED)
 def read_current_user(user: User = Depends(get_current_active_user)) -> User:
     return user
 
@@ -199,8 +209,14 @@ def read_current_user(user: User = Depends(get_current_active_user)) -> User:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/email/request-verification", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/email/request-verification",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={**UNAUTHORIZED, **RATE_LIMITED},
+)
+@limiter.limit("5/hour")
 def request_email_verification(
+    request: Request,
     user: User = Depends(get_current_active_user),
     db: Session = Depends(get_db),
     email: EmailService = Depends(get_email_service),
@@ -228,8 +244,15 @@ def request_email_verification(
     )
 
 
-@router.post("/email/verify", status_code=status.HTTP_204_NO_CONTENT)
-def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
+@router.post(
+    "/email/verify",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=RATE_LIMITED,
+)
+@limiter.limit("10/hour")
+def verify_email(
+    request: Request, payload: VerifyEmailRequest, db: Session = Depends(get_db)
+):
     """Verify an email using the token from the verification link."""
     record = consume_one_time_token(
         db, token=payload.token, purpose=PURPOSE_EMAIL_VERIFICATION
@@ -249,7 +272,11 @@ def verify_email(payload: VerifyEmailRequest, db: Session = Depends(get_db)):
 # ---------------------------------------------------------------------------
 
 
-@router.post("/password/forgot", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/password/forgot",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=RATE_LIMITED,
+)
 @limiter.limit("5/hour")
 def forgot_password(
     request: Request,
@@ -284,8 +311,15 @@ def forgot_password(
     )
 
 
-@router.post("/password/reset", status_code=status.HTTP_204_NO_CONTENT)
-def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+@router.post(
+    "/password/reset",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=RATE_LIMITED,
+)
+@limiter.limit("10/hour")
+def reset_password(
+    request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)
+):
     """Reset a password using the token from the reset email."""
     record = consume_one_time_token(
         db, token=payload.token, purpose=PURPOSE_PASSWORD_RESET
