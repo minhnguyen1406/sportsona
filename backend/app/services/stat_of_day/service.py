@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models.stat_of_day import StatOfDay
@@ -57,6 +58,15 @@ def get_or_generate(db: Session, today: date) -> StatOfDay:
         model=narrator.model,
     )
     db.add(stat)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Two first-requests of the day raced; the other one won the PK.
+        # Serve theirs — one generation per day is the whole point.
+        db.rollback()
+        existing = db.query(StatOfDay).filter(StatOfDay.date == today).first()
+        if existing is None:  # IntegrityError from something else entirely
+            raise
+        return existing
     db.refresh(stat)
     return stat

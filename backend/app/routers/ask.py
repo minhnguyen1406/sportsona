@@ -128,4 +128,5 @@ def ask(request: Request, payload: AskRequest, db: Session = Depends(get_db)) ->
         llm_latency_ms=result.llm_latency_ms,
         db_latency_ms=result.db_latency_ms,
         cache_read_tokens=result.cache_read_tokens,
+        cached=result.cached,
     )

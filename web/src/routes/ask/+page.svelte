@@ -155,9 +155,13 @@
       </details>
 
       <p class="text-xs text-muted-foreground border-t pt-3">
-        {result.model} · LLM {result.llm_latency_ms}ms · DB {result.db_latency_ms}ms
-        {#if result.cache_read_tokens > 0}
-          · cached {result.cache_read_tokens.toLocaleString()} prompt tokens
+        {#if result.cached}
+          instant — served from cache · {result.model}
+        {:else}
+          {result.model} · LLM {result.llm_latency_ms}ms · DB {result.db_latency_ms}ms
+          {#if result.cache_read_tokens > 0}
+            · cached {result.cache_read_tokens.toLocaleString()} prompt tokens
+          {/if}
         {/if}
       </p>
     </Card>

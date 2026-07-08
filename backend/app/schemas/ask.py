@@ -21,3 +21,4 @@ class AskResponse(BaseModel):
     llm_latency_ms: int
     db_latency_ms: int
     cache_read_tokens: int
+    cached: bool = False
