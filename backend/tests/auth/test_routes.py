@@ -27,9 +27,9 @@ class TestRegister:
         assert body["email"] == "new@example.com"
         assert body["username"] == "newuser"
         assert body["is_active"] is True
-        assert body["is_superuser"] is False
         assert body["is_verified"] is False
         assert "hashed_password" not in body  # never leaked
+        assert "is_superuser" not in body  # role bits stay server-side
         assert db_session.query(User).count() == 1
 
     def test_password_is_hashed_not_stored_plaintext(self, client, db_session):
