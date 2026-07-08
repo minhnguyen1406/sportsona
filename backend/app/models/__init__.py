@@ -1,6 +1,8 @@
 from app.core.database import Base
 from app.models.user import User
 from app.models.auth import OneTimeToken, RevokedRefreshToken
+from app.models.ask_cache import AskCache
+from app.models.recap import RaceRecap
 from app.models.stat_of_day import StatOfDay
 from app.models.f1 import (
     SCHEMA as F1_SCHEMA,
@@ -21,6 +23,8 @@ __all__ = [
     "User",
     "OneTimeToken",
     "RevokedRefreshToken",
+    "AskCache",
+    "RaceRecap",
     "StatOfDay",
     "F1_SCHEMA",
     "Season",

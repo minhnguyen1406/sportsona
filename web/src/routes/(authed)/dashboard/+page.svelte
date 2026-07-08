@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Card from '$lib/components/ui/Card.svelte';
+  import RecapCard from '$lib/components/RecapCard.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import { ApiError, type DashboardResponse, usersApi } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
@@ -10,6 +11,22 @@
   let dashboard = $state<DashboardResponse | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
+
+  /** Most recent completed race across the user's followed drivers — the
+   *  race their recap is most likely about. Derived from data already in
+   *  the dashboard payload, no extra request. */
+  const latestRace = $derived.by(() => {
+    if (!dashboard) return null;
+    let best: { race_id: number; race_name: string; date: string } | null = null;
+    for (const fd of dashboard.followed_drivers) {
+      for (const r of fd.recent_results) {
+        if (!best || r.date > best.date) {
+          best = { race_id: r.race_id, race_name: r.race_name, date: r.date };
+        }
+      }
+    }
+    return best;
+  });
 
   onMount(async () => {
     try {
@@ -71,6 +88,11 @@
         <p class="text-muted-foreground">No upcoming races scheduled.</p>
       {/if}
     </Card>
+
+    <!-- Personalized recap of the latest race -->
+    {#if latestRace}
+      <RecapCard raceId={latestRace.race_id} raceName={latestRace.race_name} />
+    {/if}
 
     <!-- Followed drivers -->
     <section class="space-y-3">
