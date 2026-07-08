@@ -4,6 +4,7 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import Badge from '$lib/components/ui/Badge.svelte';
   import Card from '$lib/components/ui/Card.svelte';
+  import RecapCard from '$lib/components/RecapCard.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import {
     ApiError,
@@ -12,6 +13,7 @@
     type QualifyingResultResponse,
     f1Api
   } from '$lib/api';
+  import { auth } from '$lib/stores/auth.svelte';
   import { formatLongDate } from '$lib/date';
 
   let race = $state<RaceResponse | null>(null);
@@ -66,6 +68,10 @@
         · {formatLongDate(race.date)}
       </div>
     </header>
+
+    {#if auth.isAuthenticated && results.length > 0}
+      <RecapCard raceId={race.id} />
+    {/if}
 
     {#if results.length > 0}
       <section class="space-y-2">
