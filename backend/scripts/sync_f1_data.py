@@ -22,6 +22,7 @@ def main():
     parser = argparse.ArgumentParser(description='Sync F1 data to database')
     parser.add_argument('--year', type=int, required=True, help='Season year to sync')
     parser.add_argument('--results', action='store_true', help='Also sync race results for completed races')
+    parser.add_argument('--qualifying', action='store_true', help='Also sync qualifying results for completed races')
     parser.add_argument('--standings', action='store_true', help='Also sync standings for the season')
     args = parser.parse_args()
 
@@ -55,6 +56,24 @@ def main():
                 try:
                     results = service.sync_race_results(args.year, rd)
                     print(f"    ✓ Round {rd} ({rname}): {len(results)} results")
+                except Exception as e:
+                    db.rollback()
+                    print(f"    ✗ Round {rd}: {e}")
+
+        # Optionally sync qualifying for completed races
+        if args.qualifying:
+            print("  Syncing qualifying...")
+            from app.models import Race
+            races = db.query(Race).filter(
+                Race.season == args.year,
+                Race.date <= date.today()
+            ).order_by(Race.round).all()
+
+            for race in races:
+                rd, rname = race.round, race.name
+                try:
+                    quali = service.sync_qualifying_results(args.year, rd)
+                    print(f"    ✓ Round {rd} ({rname}): {len(quali)} qualifying rows")
                 except Exception as e:
                     db.rollback()
                     print(f"    ✗ Round {rd}: {e}")

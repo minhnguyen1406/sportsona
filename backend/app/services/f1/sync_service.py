@@ -12,9 +12,27 @@ from app.models import (
     Circuit,
     Race,
     RaceResult,
+    QualifyingResult,
     DriverStanding,
     ConstructorStanding,
 )
+
+
+def _format_lap_time(value) -> str | None:
+    """Normalise a lap time to the Ergast-style 'M:SS.mmm' string, or None.
+
+    FastF1 returns pandas Timedelta (NaT for no time); Ergast returns strings.
+    Storing one canonical format keeps /ask answers and UI rendering uniform.
+    """
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    if isinstance(value, str):
+        return value
+    if pd.isna(value):
+        return None
+    total_seconds = value.total_seconds()
+    minutes, seconds = divmod(total_seconds, 60)
+    return f"{int(minutes)}:{seconds:06.3f}"
 
 # Detailed session data available from 2018+
 MODERN_ERA_START = 2018
@@ -406,6 +424,45 @@ class F1DataService:
         self.db.flush()
         return drivers, constructors, entries
 
+    # ─────────────────────────────────────────────────────────────────────
+    # Race results
+    #
+    # Both era paths normalise their upstream rows into a plain values dict
+    # and delegate to _upsert_race_result. Upserting (rather than skipping
+    # existing rows) means a re-sync repairs partially-synced races and
+    # refreshes any corrected data — syncs are idempotent AND self-healing.
+    # ─────────────────────────────────────────────────────────────────────
+
+    def _upsert_race_result(self, race_id: int, driver_id: str, values: dict) -> RaceResult:
+        """Update the existing (race, driver) result row or insert a new one.
+
+        The caller is responsible for de-duplicating within its own batch
+        (two upstream rows can resolve to the same canonical driver_id).
+        """
+        race_result = self.db.query(RaceResult).filter(
+            RaceResult.race_id == race_id,
+            RaceResult.driver_id == driver_id
+        ).first()
+
+        if race_result is None:
+            race_result = RaceResult(race_id=race_id, driver_id=driver_id, **values)
+            self.db.add(race_result)
+        else:
+            for field, value in values.items():
+                setattr(race_result, field, value)
+        # Flush so the next in-batch existence check sees this row.
+        self.db.flush()
+        return race_result
+
+    def _get_race_or_raise(self, year: int, round_number: int) -> Race:
+        race = self.db.query(Race).filter(
+            Race.season == year,
+            Race.round == round_number
+        ).first()
+        if not race:
+            raise ValueError(f"Race not found: {year} round {round_number}")
+        return race
+
     def sync_race_results(self, year: int, round_number: int) -> list[RaceResult]:
         """Sync race results for a specific race."""
         if year >= MODERN_ERA_START:
@@ -418,15 +475,9 @@ class F1DataService:
         session = fastf1.get_session(year, round_number, 'R')
         session.load()
 
-        race = self.db.query(Race).filter(
-            Race.season == year,
-            Race.round == round_number
-        ).first()
-
-        if not race:
-            raise ValueError(f"Race not found: {year} round {round_number}")
-
-        results = []
+        race = self._get_race_or_raise(year, round_number)
+        results: list[RaceResult] = []
+        seen: set[str] = set()
 
         for _, result in session.results.iterrows():
             # Same ASCII-folding resolver as _sync_drivers_modern so race
@@ -434,32 +485,24 @@ class F1DataService:
             driver_id = self._resolve_driver_id(
                 "", result['FirstName'], result['LastName']
             )
+            if driver_id in seen:
+                continue  # two upstream rows collapsed onto one canonical id
+            seen.add(driver_id)
+
             constructor_id = self._resolve_constructor_id("", result['TeamName'])
-
-            race_result = self.db.query(RaceResult).filter(
-                RaceResult.race_id == race.id,
-                RaceResult.driver_id == driver_id
-            ).first()
-
             position = result['Position']
             grid = result['GridPosition'] if 'GridPosition' in result else None
 
-            if not race_result:
-                race_result = RaceResult(
-                    race_id=race.id,
-                    driver_id=driver_id,
-                    constructor_id=constructor_id,
-                    grid_position=int(grid) if grid and not pd.isna(grid) else None,
-                    position=int(position) if position and not pd.isna(position) else None,
-                    position_text=str(int(position)) if position and not pd.isna(position) else 'R',
-                    points=float(result['Points']) if result['Points'] else 0,
-                    laps=int(result['NumberOfLaps']) if 'NumberOfLaps' in result and result['NumberOfLaps'] else None,
-                    time=str(result['Time']) if pd.notna(result.get('Time')) else None,
-                    status=result['Status']
-                )
-                self.db.add(race_result)
-
-            results.append(race_result)
+            results.append(self._upsert_race_result(race.id, driver_id, {
+                'constructor_id': constructor_id,
+                'grid_position': int(grid) if grid and not pd.isna(grid) else None,
+                'position': int(position) if position and not pd.isna(position) else None,
+                'position_text': str(int(position)) if position and not pd.isna(position) else 'R',
+                'points': float(result['Points']) if result['Points'] else 0,
+                'laps': int(result['NumberOfLaps']) if 'NumberOfLaps' in result and result['NumberOfLaps'] else None,
+                'time': str(result['Time']) if pd.notna(result.get('Time')) else None,
+                'status': result['Status'],
+            }))
 
         self.db.commit()
         return results
@@ -471,25 +514,21 @@ class F1DataService:
         if not ergast_results.content or ergast_results.content[0].empty:
             return []
 
-        race = self.db.query(Race).filter(
-            Race.season == year,
-            Race.round == round_number
-        ).first()
-
-        if not race:
-            raise ValueError(f"Race not found: {year} round {round_number}")
-
-        results = []
+        race = self._get_race_or_raise(year, round_number)
+        results: list[RaceResult] = []
+        seen: set[str] = set()
 
         for _, result in ergast_results.content[0].iterrows():
             driver_id = self._resolve_driver_id(
                 result['driverId'], result['givenName'], result['familyName']
             )
+            if driver_id in seen:
+                continue
+            seen.add(driver_id)
+
             constructor_id = self._resolve_constructor_id(
                 result['constructorId'], result['constructorName']
             )
-
-            # Ensure driver and constructor exist
             self._ensure_driver(
                 driver_id,
                 result['givenName'],
@@ -502,32 +541,122 @@ class F1DataService:
                 result.get('constructorNationality')
             )
 
-            race_result = self.db.query(RaceResult).filter(
-                RaceResult.race_id == race.id,
-                RaceResult.driver_id == driver_id
-            ).first()
+            position = result.get('position')
+            # `totalRaceTime` is a pd.Timedelta for finishers and pd.NaT for
+            # DNFs — stringify only when present so the String column never
+            # receives a NaT (which Postgres tries to cast to timestamp).
+            race_time = result.get('totalRaceTime')
 
-            if not race_result:
-                position = result.get('position')
-                # `totalRaceTime` is a pd.Timedelta for finishers and pd.NaT for
-                # DNFs — stringify only when present so the String column never
-                # receives a NaT (which Postgres tries to cast to timestamp).
-                race_time = result.get('totalRaceTime')
-                race_result = RaceResult(
-                    race_id=race.id,
-                    driver_id=driver_id,
-                    constructor_id=constructor_id,
-                    grid_position=int(result['grid']) if pd.notna(result.get('grid')) else None,
-                    position=int(position) if pd.notna(position) else None,
-                    position_text=result.get('positionText', str(position) if pd.notna(position) else 'R'),
-                    points=float(result['points']) if pd.notna(result.get('points')) else 0,
-                    laps=int(result['laps']) if pd.notna(result.get('laps')) else None,
-                    time=str(race_time) if pd.notna(race_time) else None,
-                    status=result.get('status')
-                )
-                self.db.add(race_result)
+            results.append(self._upsert_race_result(race.id, driver_id, {
+                'constructor_id': constructor_id,
+                'grid_position': int(result['grid']) if pd.notna(result.get('grid')) else None,
+                'position': int(position) if pd.notna(position) else None,
+                'position_text': result.get('positionText', str(position) if pd.notna(position) else 'R'),
+                'points': float(result['points']) if pd.notna(result.get('points')) else 0,
+                'laps': int(result['laps']) if pd.notna(result.get('laps')) else None,
+                'time': str(race_time) if pd.notna(race_time) else None,
+                'status': result.get('status'),
+            }))
 
-            results.append(race_result)
+        self.db.commit()
+        return results
+
+    # ─────────────────────────────────────────────────────────────────────
+    # Qualifying results — same upsert pattern as race results.
+    # ─────────────────────────────────────────────────────────────────────
+
+    def _upsert_qualifying_result(self, race_id: int, driver_id: str, values: dict) -> QualifyingResult:
+        """Update the existing (race, driver) qualifying row or insert one."""
+        quali = self.db.query(QualifyingResult).filter(
+            QualifyingResult.race_id == race_id,
+            QualifyingResult.driver_id == driver_id
+        ).first()
+
+        if quali is None:
+            quali = QualifyingResult(race_id=race_id, driver_id=driver_id, **values)
+            self.db.add(quali)
+        else:
+            for field, value in values.items():
+                setattr(quali, field, value)
+        self.db.flush()
+        return quali
+
+    def sync_qualifying_results(self, year: int, round_number: int) -> list[QualifyingResult]:
+        """Sync qualifying results for a specific race weekend."""
+        if year >= MODERN_ERA_START:
+            return self._sync_qualifying_modern(year, round_number)
+        else:
+            return self._sync_qualifying_ergast(year, round_number)
+
+    def _sync_qualifying_modern(self, year: int, round_number: int) -> list[QualifyingResult]:
+        """Sync qualifying using FastF1 (2018+). Session results carry
+        Q1/Q2/Q3 as pandas Timedelta columns."""
+        session = fastf1.get_session(year, round_number, 'Q')
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+
+        race = self._get_race_or_raise(year, round_number)
+        results: list[QualifyingResult] = []
+        seen: set[str] = set()
+
+        for _, row in session.results.iterrows():
+            driver_id = self._resolve_driver_id("", row['FirstName'], row['LastName'])
+            if driver_id in seen:
+                continue
+            seen.add(driver_id)
+
+            constructor_id = self._resolve_constructor_id("", row['TeamName'])
+            position = row['Position']
+
+            results.append(self._upsert_qualifying_result(race.id, driver_id, {
+                'constructor_id': constructor_id,
+                'position': int(position) if position and not pd.isna(position) else None,
+                'q1_time': _format_lap_time(row.get('Q1')),
+                'q2_time': _format_lap_time(row.get('Q2')),
+                'q3_time': _format_lap_time(row.get('Q3')),
+            }))
+
+        self.db.commit()
+        return results
+
+    def _sync_qualifying_ergast(self, year: int, round_number: int) -> list[QualifyingResult]:
+        """Sync qualifying using Ergast (historical). Ergast has qualifying
+        data from 1994 onward; earlier seasons return an empty frame."""
+        ergast_quali = self.ergast.get_qualifying_results(year, round=round_number)
+
+        if not ergast_quali.content or ergast_quali.content[0].empty:
+            return []
+
+        race = self._get_race_or_raise(year, round_number)
+        results: list[QualifyingResult] = []
+        seen: set[str] = set()
+
+        for _, row in ergast_quali.content[0].iterrows():
+            driver_id = self._resolve_driver_id(
+                row['driverId'], row['givenName'], row['familyName']
+            )
+            if driver_id in seen:
+                continue
+            seen.add(driver_id)
+
+            constructor_id = self._resolve_constructor_id(
+                row['constructorId'], row['constructorName']
+            )
+            self._ensure_driver(
+                driver_id, row['givenName'], row['familyName'], row.get('driverNationality')
+            )
+            self._ensure_constructor(
+                constructor_id, row['constructorName'], row.get('constructorNationality')
+            )
+
+            position = row.get('position')
+
+            results.append(self._upsert_qualifying_result(race.id, driver_id, {
+                'constructor_id': constructor_id,
+                'position': int(position) if pd.notna(position) else None,
+                'q1_time': _format_lap_time(row.get('Q1')),
+                'q2_time': _format_lap_time(row.get('Q2')),
+                'q3_time': _format_lap_time(row.get('Q3')),
+            }))
 
         self.db.commit()
         return results
