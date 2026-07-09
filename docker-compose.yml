@@ -60,6 +60,34 @@ services:
     networks:
       - sportsona-network
 
+  # Nightly data sync — same image as the backend, different entrypoint.
+  # Keeps the current season's results/qualifying/standings fresh without
+  # manual sync runs. See backend/scripts/scheduled_sync.py.
+  sportsona-scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sportsona-scheduler
+    environment:
+      POSTGRES_SERVER: sportsona-db
+      POSTGRES_USER: ${POSTGRES_USER:-sportsona_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-sportsona}
+      FASTF1_CACHE_DIR: /app/cache
+      SYNC_HOUR_UTC: ${SYNC_HOUR_UTC:-4}
+      SYNC_ON_STARTUP: ${SYNC_ON_STARTUP:-0}
+    volumes:
+      - ./backend/app:/app/app:delegated
+      - ./backend/scripts:/app/scripts:delegated
+      - sportsona_fastf1_cache:/app/cache
+    depends_on:
+      sportsona-db:
+        condition: service_healthy
+    command: python -u -m scripts.scheduled_sync
+    restart: unless-stopped
+    networks:
+      - sportsona-network
+
 networks:
   sportsona-network:
     driver: bridge
