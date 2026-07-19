@@ -64,23 +64,19 @@ def main() -> None:
     try:
         service = F1DataService(db)
 
-        # Build the work list — only rounds with zero results.
-        targets: list[tuple[int, int, str]] = []
-        for season in seasons:
-            races = (
+        # Build the work list — only rounds with zero results. One anti-join
+        # (LEFT JOIN ... IS NULL) computes the set difference races∖synced in
+        # a single query, instead of one existence probe per race.
+        targets: list[tuple[int, int, str]] = [
+            (r.season, r.round, r.name)
+            for r in (
                 db.query(Race)
-                .filter(Race.season == season)
-                .order_by(Race.round)
+                .outerjoin(RaceResult, RaceResult.race_id == Race.id)
+                .filter(Race.season.in_(seasons), RaceResult.id.is_(None))
+                .order_by(Race.season, Race.round)
                 .all()
             )
-            for r in races:
-                exists = (
-                    db.query(RaceResult)
-                    .filter(RaceResult.race_id == r.id)
-                    .first()
-                )
-                if exists is None:
-                    targets.append((r.season, r.round, r.name))
+        ]
 
         if not targets:
             print("Nothing missing — every round already has results.")

@@ -43,6 +43,27 @@ class F1DataService:
         self.db = db
         self.ergast = Ergast()
         fastf1.Cache.enable_cache(settings.FASTF1_CACHE_DIR)
+        # In-memory identity sets, lazily loaded. The resolvers and _ensure_*
+        # helpers run for EVERY upstream row — with per-row SELECTs a single
+        # season sync issued 1,500+ tiny queries. One load + O(1) hashset
+        # membership replaces all of them. Kept in sync on insert, so the
+        # sets never go stale within a service instance's lifetime.
+        self._known_driver_ids: set[str] | None = None
+        self._known_constructor_ids: set[str] | None = None
+
+    def _driver_id_exists(self, driver_id: str) -> bool:
+        if self._known_driver_ids is None:
+            self._known_driver_ids = {
+                row[0] for row in self.db.query(Driver.driver_id).all()
+            }
+        return driver_id in self._known_driver_ids
+
+    def _constructor_id_exists(self, constructor_id: str) -> bool:
+        if self._known_constructor_ids is None:
+            self._known_constructor_ids = {
+                row[0] for row in self.db.query(Constructor.constructor_id).all()
+            }
+        return constructor_id in self._known_constructor_ids
 
     def _ensure_season(self, year: int) -> Season:
         """Ensure season exists in database."""
@@ -69,33 +90,35 @@ class F1DataService:
 
     def _ensure_driver(self, driver_id: str, given_name: str, family_name: str,
                        nationality: str = None, dob: date = None) -> Driver:
-        """Ensure driver exists in database."""
-        driver = self.db.query(Driver).filter(Driver.driver_id == driver_id).first()
-        if not driver:
-            driver = Driver(
-                driver_id=driver_id,
-                given_name=given_name,
-                family_name=family_name,
-                nationality=nationality,
-                date_of_birth=dob
-            )
-            self.db.add(driver)
-            self.db.flush()
+        """Ensure driver exists in database (hashset check, no query on hit)."""
+        if self._driver_id_exists(driver_id):
+            return self.db.query(Driver).filter(Driver.driver_id == driver_id).first()
+        driver = Driver(
+            driver_id=driver_id,
+            given_name=given_name,
+            family_name=family_name,
+            nationality=nationality,
+            date_of_birth=dob
+        )
+        self.db.add(driver)
+        self.db.flush()
+        self._known_driver_ids.add(driver_id)
         return driver
 
     def _ensure_constructor(self, constructor_id: str, name: str, nationality: str = None) -> Constructor:
-        """Ensure constructor exists in database."""
-        constructor = self.db.query(Constructor).filter(
-            Constructor.constructor_id == constructor_id
-        ).first()
-        if not constructor:
-            constructor = Constructor(
-                constructor_id=constructor_id,
-                name=name,
-                nationality=nationality
-            )
-            self.db.add(constructor)
-            self.db.flush()
+        """Ensure constructor exists in database (hashset check, no query on hit)."""
+        if self._constructor_id_exists(constructor_id):
+            return self.db.query(Constructor).filter(
+                Constructor.constructor_id == constructor_id
+            ).first()
+        constructor = Constructor(
+            constructor_id=constructor_id,
+            name=name,
+            nationality=nationality
+        )
+        self.db.add(constructor)
+        self.db.flush()
+        self._known_constructor_ids.add(constructor_id)
         return constructor
 
     # ─────────────────────────────────────────────────────────────────────
@@ -153,19 +176,19 @@ class F1DataService:
         # Collapse known same-person aliases first so both upstreams converge.
         long_form = self._DRIVER_ALIASES.get(long_form, long_form)
         # Already in DB as long-form → use that
-        if self.db.query(Driver.driver_id).filter(Driver.driver_id == long_form).first():
+        if self._driver_id_exists(long_form):
             return long_form
         # Else if the Ergast id is already in DB → keep using it (historical rows)
-        if ergast_id and self.db.query(Driver.driver_id).filter(Driver.driver_id == ergast_id).first():
+        if ergast_id and self._driver_id_exists(ergast_id):
             return ergast_id
         # New driver: prefer long-form going forward
         return long_form
 
     def _resolve_constructor_id(self, ergast_id: str, name: str) -> str:
         long_form = self._slugify(name)
-        if self.db.query(Constructor.constructor_id).filter(Constructor.constructor_id == long_form).first():
+        if self._constructor_id_exists(long_form):
             return long_form
-        if ergast_id and self.db.query(Constructor.constructor_id).filter(Constructor.constructor_id == ergast_id).first():
+        if ergast_id and self._constructor_id_exists(ergast_id):
             return ergast_id
         return long_form
 
@@ -433,25 +456,35 @@ class F1DataService:
     # refreshes any corrected data — syncs are idempotent AND self-healing.
     # ─────────────────────────────────────────────────────────────────────
 
-    def _upsert_race_result(self, race_id: int, driver_id: str, values: dict) -> RaceResult:
-        """Update the existing (race, driver) result row or insert a new one.
+    def _existing_race_results(self, race_id: int) -> dict[str, RaceResult]:
+        """Prefetch a race's result rows keyed by driver — one query instead
+        of one existence check per upstream row."""
+        return {
+            rr.driver_id: rr
+            for rr in self.db.query(RaceResult).filter(RaceResult.race_id == race_id)
+        }
+
+    def _upsert_race_result(
+        self,
+        race_id: int,
+        driver_id: str,
+        values: dict,
+        existing: dict[str, RaceResult],
+    ) -> RaceResult:
+        """Update the (race, driver) result row in `existing` or insert a new
+        one, keeping the map current for later rows in the same batch.
 
         The caller is responsible for de-duplicating within its own batch
         (two upstream rows can resolve to the same canonical driver_id).
         """
-        race_result = self.db.query(RaceResult).filter(
-            RaceResult.race_id == race_id,
-            RaceResult.driver_id == driver_id
-        ).first()
-
+        race_result = existing.get(driver_id)
         if race_result is None:
             race_result = RaceResult(race_id=race_id, driver_id=driver_id, **values)
             self.db.add(race_result)
+            existing[driver_id] = race_result
         else:
             for field, value in values.items():
                 setattr(race_result, field, value)
-        # Flush so the next in-batch existence check sees this row.
-        self.db.flush()
         return race_result
 
     def _get_race_or_raise(self, year: int, round_number: int) -> Race:
@@ -476,6 +509,7 @@ class F1DataService:
         session.load()
 
         race = self._get_race_or_raise(year, round_number)
+        existing = self._existing_race_results(race.id)
         results: list[RaceResult] = []
         seen: set[str] = set()
 
@@ -502,7 +536,7 @@ class F1DataService:
                 'laps': int(result['NumberOfLaps']) if 'NumberOfLaps' in result and result['NumberOfLaps'] else None,
                 'time': str(result['Time']) if pd.notna(result.get('Time')) else None,
                 'status': result['Status'],
-            }))
+            }, existing))
 
         self.db.commit()
         return results
@@ -515,6 +549,7 @@ class F1DataService:
             return []
 
         race = self._get_race_or_raise(year, round_number)
+        existing = self._existing_race_results(race.id)
         results: list[RaceResult] = []
         seen: set[str] = set()
 
@@ -556,7 +591,7 @@ class F1DataService:
                 'laps': int(result['laps']) if pd.notna(result.get('laps')) else None,
                 'time': str(race_time) if pd.notna(race_time) else None,
                 'status': result.get('status'),
-            }))
+            }, existing))
 
         self.db.commit()
         return results
@@ -565,20 +600,29 @@ class F1DataService:
     # Qualifying results — same upsert pattern as race results.
     # ─────────────────────────────────────────────────────────────────────
 
-    def _upsert_qualifying_result(self, race_id: int, driver_id: str, values: dict) -> QualifyingResult:
-        """Update the existing (race, driver) qualifying row or insert one."""
-        quali = self.db.query(QualifyingResult).filter(
-            QualifyingResult.race_id == race_id,
-            QualifyingResult.driver_id == driver_id
-        ).first()
+    def _existing_qualifying_results(self, race_id: int) -> dict[str, QualifyingResult]:
+        """Prefetch a race's qualifying rows keyed by driver — one query."""
+        return {
+            q.driver_id: q
+            for q in self.db.query(QualifyingResult).filter(QualifyingResult.race_id == race_id)
+        }
 
+    def _upsert_qualifying_result(
+        self,
+        race_id: int,
+        driver_id: str,
+        values: dict,
+        existing: dict[str, QualifyingResult],
+    ) -> QualifyingResult:
+        """Update the (race, driver) qualifying row in `existing` or insert one."""
+        quali = existing.get(driver_id)
         if quali is None:
             quali = QualifyingResult(race_id=race_id, driver_id=driver_id, **values)
             self.db.add(quali)
+            existing[driver_id] = quali
         else:
             for field, value in values.items():
                 setattr(quali, field, value)
-        self.db.flush()
         return quali
 
     def sync_qualifying_results(self, year: int, round_number: int) -> list[QualifyingResult]:
@@ -595,6 +639,7 @@ class F1DataService:
         session.load(laps=False, telemetry=False, weather=False, messages=False)
 
         race = self._get_race_or_raise(year, round_number)
+        existing = self._existing_qualifying_results(race.id)
         results: list[QualifyingResult] = []
         seen: set[str] = set()
 
@@ -613,7 +658,7 @@ class F1DataService:
                 'q1_time': _format_lap_time(row.get('Q1')),
                 'q2_time': _format_lap_time(row.get('Q2')),
                 'q3_time': _format_lap_time(row.get('Q3')),
-            }))
+            }, existing))
 
         self.db.commit()
         return results
@@ -627,6 +672,7 @@ class F1DataService:
             return []
 
         race = self._get_race_or_raise(year, round_number)
+        existing = self._existing_qualifying_results(race.id)
         results: list[QualifyingResult] = []
         seen: set[str] = set()
 
@@ -656,7 +702,7 @@ class F1DataService:
                 'q1_time': _format_lap_time(row.get('Q1')),
                 'q2_time': _format_lap_time(row.get('Q2')),
                 'q3_time': _format_lap_time(row.get('Q3')),
-            }))
+            }, existing))
 
         self.db.commit()
         return results
