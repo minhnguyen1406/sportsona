@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
@@ -59,6 +59,27 @@ def get_current_active_user(user: User = Depends(get_current_user)) -> User:
             detail="Inactive user",
         )
     return user
+
+
+def get_optional_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Resolve the current user if a valid Bearer token is present, else None.
+
+    For endpoints that work anonymously but personalize when signed in
+    (e.g. /ask attributes answers to their asker). Never raises — an
+    invalid or expired token is treated the same as no token.
+    """
+    auth_header = request.headers.get("authorization", "")
+    if not auth_header.lower().startswith("bearer "):
+        return None
+    try:
+        payload = decode_access_token(auth_header[7:])
+        user_id = int(payload.get("sub", ""))
+    except (jwt.InvalidTokenError, TypeError, ValueError):
+        return None
+    return db.query(User).filter(User.id == user_id, User.is_active.is_(True)).first()
 
 
 def get_current_superuser(user: User = Depends(get_current_active_user)) -> User:

@@ -1,15 +1,41 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import Alert from '$lib/components/ui/Alert.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import ResultsTable from '$lib/components/ResultsTable.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
-  import { ApiError, type AskResponse, askApi } from '$lib/api';
+  import { ApiError, type AskHistoryItem, type AskResponse, askApi } from '$lib/api';
+  import { auth } from '$lib/stores/auth.svelte';
 
   let question = $state('');
   let loading = $state(false);
   let error = $state<string | null>(null);
   let result = $state<AskResponse | null>(null);
+  let history = $state<AskHistoryItem[]>([]);
+  let copied = $state(false);
+
+  onMount(async () => {
+    if (!auth.isAuthenticated) return;
+    try {
+      history = await askApi.history();
+    } catch {
+      /* history is a nicety — never block the page on it */
+    }
+  });
+
+  async function copyShareLink() {
+    if (!result?.answer_id) return;
+    const url = `${location.origin}/ask/a/${result.answer_id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      copied = true;
+      setTimeout(() => (copied = false), 2000);
+    } catch {
+      // Clipboard blocked (http, permissions) — show the URL for manual copy.
+      prompt('Copy this link:', url);
+    }
+  }
 
   const examples = [
     'Who has the most wins in F1 history?',
@@ -48,6 +74,13 @@
     result = null;
     try {
       result = await askApi.ask(trimmed);
+      // Prepend to history optimistically — the server stored it already.
+      if (auth.isAuthenticated && result.answer_id) {
+        history = [
+          { slug: result.answer_id, question: trimmed, created_at: new Date().toISOString() },
+          ...history
+        ].slice(0, 20);
+      }
     } catch (err) {
       error = messageFromError(err);
     } finally {
@@ -122,9 +155,16 @@
 
   {#if result}
     <Card class="p-6 space-y-5">
-      <div class="border-b pb-4">
-        <p class="text-xs uppercase tracking-widest text-muted-foreground">You asked</p>
-        <p class="text-lg font-medium">{result.question}</p>
+      <div class="border-b pb-4 flex items-start justify-between gap-3">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-muted-foreground">You asked</p>
+          <p class="text-lg font-medium">{result.question}</p>
+        </div>
+        {#if result.answer_id}
+          <Button variant="outline" size="sm" onclick={copyShareLink}>
+            {copied ? 'Copied!' : 'Share'}
+          </Button>
+        {/if}
       </div>
 
       {#if result.reasoning}
@@ -165,5 +205,26 @@
         {/if}
       </p>
     </Card>
+  {/if}
+
+  {#if auth.isAuthenticated && history.length > 0}
+    <section class="space-y-3">
+      <h2 class="text-sm font-semibold text-muted-foreground">Your recent questions</h2>
+      <ul class="divide-y divide-border rounded-md border">
+        {#each history as item (item.slug)}
+          <li>
+            <a
+              href="/ask/a/{item.slug}"
+              class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-muted/40 transition-colors"
+            >
+              <span class="truncate">{item.question}</span>
+              <span class="text-xs text-muted-foreground shrink-0">
+                {new Date(item.created_at).toLocaleDateString()}
+              </span>
+            </a>
+          </li>
+        {/each}
+      </ul>
+    </section>
   {/if}
 </div>
