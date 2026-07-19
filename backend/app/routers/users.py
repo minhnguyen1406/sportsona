@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload
 
 from app.auth.dependencies import get_current_active_user
@@ -202,34 +203,109 @@ def unfollow_constructor(
 # ---------------------------------------------------------------------------
 
 
-def _latest_driver_standing(db: Session, driver_id: str) -> DriverStanding | None:
-    return (
+# ---------------------------------------------------------------------------
+# Dashboard batch queries.
+#
+# Naive version was one query per followed entity (classic N+1): O(F) round
+# trips for F follows. These helpers fetch ALL follows in one query each
+# using a ROW_NUMBER() window ("top-K per group" — the SQL analogue of
+# keeping a size-K heap per key), then regroup rows into a hashmap for O(1)
+# per-entity lookup while building the response.
+# ---------------------------------------------------------------------------
+
+
+def _latest_driver_standings(db: Session, driver_ids: list[str]) -> dict[str, DriverStanding]:
+    """Latest standing per driver, one query. Returns {driver_id: standing}."""
+    if not driver_ids:
+        return {}
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=DriverStanding.driver_id,
+            order_by=[DriverStanding.season.desc(), DriverStanding.round.desc()],
+        )
+        .label("rn")
+    )
+    ranked = (
+        db.query(DriverStanding.id.label("standing_id"), rn)
+        .filter(DriverStanding.driver_id.in_(driver_ids))
+        .subquery()
+    )
+    rows = (
         db.query(DriverStanding)
-        .filter(DriverStanding.driver_id == driver_id)
-        .order_by(DriverStanding.season.desc(), DriverStanding.round.desc())
-        .first()
-    )
-
-
-def _latest_constructor_standing(db: Session, constructor_id: str) -> ConstructorStanding | None:
-    return (
-        db.query(ConstructorStanding)
-        .filter(ConstructorStanding.constructor_id == constructor_id)
-        .order_by(ConstructorStanding.season.desc(), ConstructorStanding.round.desc())
-        .first()
-    )
-
-
-def _recent_results(db: Session, driver_id: str, limit: int) -> list[RaceResult]:
-    return (
-        db.query(RaceResult)
-        .join(Race, RaceResult.race_id == Race.id)
-        .options(joinedload(RaceResult.race))
-        .filter(RaceResult.driver_id == driver_id)
-        .order_by(Race.date.desc())
-        .limit(limit)
+        .join(ranked, DriverStanding.id == ranked.c.standing_id)
+        .filter(ranked.c.rn == 1)
         .all()
     )
+    return {s.driver_id: s for s in rows}
+
+
+def _latest_constructor_standings(
+    db: Session, constructor_ids: list[str]
+) -> dict[str, ConstructorStanding]:
+    """Latest standing per constructor, one query. Returns {constructor_id: standing}."""
+    if not constructor_ids:
+        return {}
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=ConstructorStanding.constructor_id,
+            order_by=[ConstructorStanding.season.desc(), ConstructorStanding.round.desc()],
+        )
+        .label("rn")
+    )
+    ranked = (
+        db.query(ConstructorStanding.id.label("standing_id"), rn)
+        .filter(ConstructorStanding.constructor_id.in_(constructor_ids))
+        .subquery()
+    )
+    rows = (
+        db.query(ConstructorStanding)
+        .join(ranked, ConstructorStanding.id == ranked.c.standing_id)
+        .filter(ranked.c.rn == 1)
+        .all()
+    )
+    return {s.constructor_id: s for s in rows}
+
+
+def _recent_results_by_driver(
+    db: Session, driver_ids: list[str], limit: int
+) -> dict[str, list[RaceResult]]:
+    """Most recent `limit` results per driver, one query.
+
+    Returns {driver_id: [results, newest first]}.
+    """
+    if not driver_ids:
+        return {}
+    rn = (
+        func.row_number()
+        .over(
+            partition_by=RaceResult.driver_id,
+            order_by=[Race.date.desc(), Race.id.desc()],
+        )
+        .label("rn")
+    )
+    ranked = (
+        db.query(RaceResult.id.label("result_id"), rn)
+        .join(Race, RaceResult.race_id == Race.id)
+        .filter(RaceResult.driver_id.in_(driver_ids))
+        .subquery()
+    )
+    rows = (
+        db.query(RaceResult)
+        .options(joinedload(RaceResult.race))
+        .join(ranked, RaceResult.id == ranked.c.result_id)
+        .filter(ranked.c.rn <= limit)
+        .all()
+    )
+    grouped: dict[str, list[RaceResult]] = {}
+    for result in rows:
+        grouped.setdefault(result.driver_id, []).append(result)
+    # The join loses the window's ordering guarantee — restore newest-first.
+    # Each list is ≤ limit items, so this is O(F · limit · log limit) ≈ free.
+    for results in grouped.values():
+        results.sort(key=lambda r: (r.race.date, r.race.id), reverse=True)
+    return grouped
 
 
 @router.get("/me/dashboard", response_model=DashboardResponse)
@@ -242,10 +318,18 @@ def get_dashboard(
     Aggregates: followed drivers (with latest standing + recent results),
     followed constructors (with latest standing), and the next upcoming race.
     """
+    # Batch: 3 queries total regardless of how many drivers/teams are
+    # followed (was 2 per driver + 1 per constructor).
+    driver_ids = [d.driver_id for d in user.followed_drivers]
+    constructor_ids = [c.constructor_id for c in user.followed_constructors]
+    standings_by_driver = _latest_driver_standings(db, driver_ids)
+    results_by_driver = _recent_results_by_driver(db, driver_ids, DASHBOARD_RECENT_RESULTS_LIMIT)
+    standings_by_constructor = _latest_constructor_standings(db, constructor_ids)
+
     followed_drivers = []
     for driver in user.followed_drivers:
-        latest = _latest_driver_standing(db, driver.driver_id)
-        recent = _recent_results(db, driver.driver_id, DASHBOARD_RECENT_RESULTS_LIMIT)
+        latest = standings_by_driver.get(driver.driver_id)
+        recent = results_by_driver.get(driver.driver_id, [])
         followed_drivers.append(
             FollowedDriverDashboard(
                 driver=DriverResponse.model_validate(driver),
@@ -269,7 +353,7 @@ def get_dashboard(
 
     followed_constructors = []
     for constructor in user.followed_constructors:
-        latest = _latest_constructor_standing(db, constructor.constructor_id)
+        latest = standings_by_constructor.get(constructor.constructor_id)
         followed_constructors.append(
             FollowedConstructorDashboard(
                 constructor=ConstructorResponse.model_validate(constructor),
