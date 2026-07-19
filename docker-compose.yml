@@ -84,6 +84,10 @@ services:
       sportsona-db:
         condition: service_healthy
     command: python -u -m scripts.scheduled_sync
+    # The image's HEALTHCHECK probes the API port, but this service runs the
+    # sync loop, not uvicorn — disable so it doesn't report as unhealthy.
+    healthcheck:
+      disable: true
     restart: unless-stopped
     networks:
       - sportsona-network
