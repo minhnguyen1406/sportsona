@@ -1,17 +1,25 @@
-"""POST /api/v1/ask — natural-language F1 stats question → SQL → rows."""
+"""POST /api/v1/ask — natural-language F1 stats question → SQL → rows.
+
+Also serves stored answer snapshots (public, by slug) and the signed-in
+user's ask history.
+"""
 
 import anthropic
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
+from app.auth.dependencies import get_current_active_user, get_optional_user
 from app.auth.rate_limit import limiter
 from app.core.database import get_db
-from app.schemas.ask import AskRequest, AskResponse
-from app.schemas.errors import RATE_LIMITED
+from app.models import AskAnswer, User
+from app.schemas.ask import AskAnswerResponse, AskHistoryItem, AskRequest, AskResponse
+from app.schemas.errors import RATE_LIMITED, UNAUTHORIZED
 from app.services.ask import AskFailure, answer_question
 
 
 router = APIRouter(prefix="/api/v1/ask", tags=["Ask"])
+
+HISTORY_LIMIT = 20
 
 
 def _http_from_llm_exception(exc: Exception) -> HTTPException | None:
@@ -80,10 +88,18 @@ def _http_from_llm_exception(exc: Exception) -> HTTPException | None:
     },
 )
 @limiter.limit("30/hour")
-def ask(request: Request, payload: AskRequest, db: Session = Depends(get_db)) -> AskResponse:
+def ask(
+    request: Request,
+    payload: AskRequest,
+    db: Session = Depends(get_db),
+    user: User | None = Depends(get_optional_user),
+) -> AskResponse:
     """Translate a natural-language F1 stats question into SQL, execute it
     against the read-only ``f1`` schema, and return the rows + the SQL that
     produced them. Calls Claude once per request, so it's rate-limited.
+
+    Every successful answer is stored as an immutable snapshot so it can be
+    shared by link; signed-in askers see theirs again in /ask/history.
     """
     try:
         result = answer_question(db, payload.question)
@@ -116,6 +132,26 @@ def ask(request: Request, payload: AskRequest, db: Session = Depends(get_db)) ->
             raise http
         raise
 
+    # Persist the snapshot. Best-effort: a storage hiccup shouldn't cost the
+    # user their answer, so failures degrade to an unshareable response.
+    answer_id: str | None = None
+    try:
+        answer = AskAnswer(
+            user_id=user.id if user else None,
+            question=result.question,
+            sql=result.sql,
+            reasoning=result.reasoning,
+            columns=result.columns,
+            rows=result.rows,
+            truncated=result.truncated,
+            model=result.model,
+        )
+        db.add(answer)
+        db.commit()
+        answer_id = answer.slug
+    except Exception:
+        db.rollback()
+
     return AskResponse(
         question=result.question,
         sql=result.sql,
@@ -129,4 +165,38 @@ def ask(request: Request, payload: AskRequest, db: Session = Depends(get_db)) ->
         db_latency_ms=result.db_latency_ms,
         cache_read_tokens=result.cache_read_tokens,
         cached=result.cached,
+        answer_id=answer_id,
     )
+
+
+@router.get(
+    "/history",
+    response_model=list[AskHistoryItem],
+    responses=UNAUTHORIZED,
+)
+def ask_history(
+    user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+) -> list[AskAnswer]:
+    """The signed-in user's most recent asks, newest first."""
+    return (
+        db.query(AskAnswer)
+        .filter(AskAnswer.user_id == user.id)
+        .order_by(AskAnswer.created_at.desc())
+        .limit(HISTORY_LIMIT)
+        .all()
+    )
+
+
+@router.get(
+    "/answers/{slug}",
+    response_model=AskAnswerResponse,
+    responses={404: {"description": "No answer with that link"}},
+)
+def get_answer(slug: str, db: Session = Depends(get_db)) -> AskAnswer:
+    """Fetch a stored answer snapshot by its share slug. Public — the slug
+    itself is the unguessable capability."""
+    answer = db.query(AskAnswer).filter(AskAnswer.slug == slug).first()
+    if answer is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found")
+    return answer
