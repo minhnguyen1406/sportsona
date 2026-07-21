@@ -50,6 +50,7 @@ class F1DataService:
         # sets never go stale within a service instance's lifetime.
         self._known_driver_ids: set[str] | None = None
         self._known_constructor_ids: set[str] | None = None
+        self._known_circuit_ids: set[str] | None = None
 
     def _driver_id_exists(self, driver_id: str) -> bool:
         if self._known_driver_ids is None:
@@ -65,6 +66,13 @@ class F1DataService:
             }
         return constructor_id in self._known_constructor_ids
 
+    def _circuit_id_exists(self, circuit_id: str) -> bool:
+        if self._known_circuit_ids is None:
+            self._known_circuit_ids = {
+                row[0] for row in self.db.query(Circuit.circuit_id).all()
+            }
+        return circuit_id in self._known_circuit_ids
+
     def _ensure_season(self, year: int) -> Season:
         """Ensure season exists in database."""
         season = self.db.query(Season).filter(Season.year == year).first()
@@ -74,52 +82,46 @@ class F1DataService:
             self.db.flush()
         return season
 
-    def _ensure_circuit(self, circuit_id: str, name: str, country: str = None, locality: str = None) -> Circuit:
-        """Ensure circuit exists in database."""
-        circuit = self.db.query(Circuit).filter(Circuit.circuit_id == circuit_id).first()
-        if not circuit:
-            circuit = Circuit(
-                circuit_id=circuit_id,
-                name=name,
-                country=country,
-                locality=locality
-            )
-            self.db.add(circuit)
-            self.db.flush()
-        return circuit
+    # The _ensure_*_exists helpers guarantee a row is present and return
+    # nothing. On the common path (row already present) they hit the in-memory
+    # id set and issue ZERO queries — the previous version ran a throwaway
+    # SELECT per row just to materialise an ORM object every caller discarded.
+    def _ensure_circuit_exists(self, circuit_id: str, name: str,
+                               country: str = None, locality: str = None) -> None:
+        """Insert the circuit if unknown; no-op (no query) if already known."""
+        if self._circuit_id_exists(circuit_id):
+            return
+        self.db.add(Circuit(
+            circuit_id=circuit_id, name=name, country=country, locality=locality
+        ))
+        self.db.flush()
+        self._known_circuit_ids.add(circuit_id)
 
-    def _ensure_driver(self, driver_id: str, given_name: str, family_name: str,
-                       nationality: str = None, dob: date = None) -> Driver:
-        """Ensure driver exists in database (hashset check, no query on hit)."""
+    def _ensure_driver_exists(self, driver_id: str, given_name: str, family_name: str,
+                              nationality: str = None, dob: date = None) -> None:
+        """Insert the driver if unknown; no-op (no query) if already known."""
         if self._driver_id_exists(driver_id):
-            return self.db.query(Driver).filter(Driver.driver_id == driver_id).first()
-        driver = Driver(
+            return
+        self.db.add(Driver(
             driver_id=driver_id,
             given_name=given_name,
             family_name=family_name,
             nationality=nationality,
-            date_of_birth=dob
-        )
-        self.db.add(driver)
+            date_of_birth=dob,
+        ))
         self.db.flush()
         self._known_driver_ids.add(driver_id)
-        return driver
 
-    def _ensure_constructor(self, constructor_id: str, name: str, nationality: str = None) -> Constructor:
-        """Ensure constructor exists in database (hashset check, no query on hit)."""
+    def _ensure_constructor_exists(self, constructor_id: str, name: str,
+                                   nationality: str = None) -> None:
+        """Insert the constructor if unknown; no-op (no query) if already known."""
         if self._constructor_id_exists(constructor_id):
-            return self.db.query(Constructor).filter(
-                Constructor.constructor_id == constructor_id
-            ).first()
-        constructor = Constructor(
-            constructor_id=constructor_id,
-            name=name,
-            nationality=nationality
-        )
-        self.db.add(constructor)
+            return
+        self.db.add(Constructor(
+            constructor_id=constructor_id, name=name, nationality=nationality
+        ))
         self.db.flush()
         self._known_constructor_ids.add(constructor_id)
-        return constructor
 
     # ─────────────────────────────────────────────────────────────────────
     # ID resolution
@@ -229,9 +231,18 @@ class F1DataService:
             "driver_entries": len(entries)
         }
 
+    def _existing_races_by_round(self, year: int) -> dict[int, Race]:
+        """Prefetch a season's races keyed by round — one query instead of a
+        per-event SELECT inside the schedule loop."""
+        return {
+            r.round: r
+            for r in self.db.query(Race).filter(Race.season == year)
+        }
+
     def _sync_schedule_modern(self, year: int) -> list[Race]:
         """Sync race schedule using FastF1 (2018+)."""
         schedule = fastf1.get_event_schedule(year)
+        existing_races = self._existing_races_by_round(year)
         races = []
 
         for _, event in schedule.iterrows():
@@ -240,30 +251,29 @@ class F1DataService:
 
             circuit_id = event['Location'].lower().replace(' ', '_').replace('-', '_')
 
-            self._ensure_circuit(
+            self._ensure_circuit_exists(
                 circuit_id=circuit_id,
                 name=event['OfficialEventName'] if 'OfficialEventName' in event else event['EventName'],
                 country=event['Country'] if 'Country' in event else None
             )
 
-            race = self.db.query(Race).filter(
-                Race.season == year,
-                Race.round == event['RoundNumber']
-            ).first()
+            round_number = event['RoundNumber']
+            race = existing_races.get(round_number)
 
             event_date = event['EventDate']
             if hasattr(event_date, 'date'):
                 event_date = event_date.date()
 
-            if not race:
+            if race is None:
                 race = Race(
                     season=year,
-                    round=event['RoundNumber'],
+                    round=round_number,
                     name=event['EventName'],
                     circuit_id=circuit_id,
                     date=event_date,
                 )
                 self.db.add(race)
+                existing_races[round_number] = race
 
             races.append(race)
 
@@ -278,39 +288,48 @@ class F1DataService:
         if schedule.empty:
             return races
 
+        existing_races = self._existing_races_by_round(year)
+
         for _, event in schedule.iterrows():
             circuit_id = event['circuitId']
 
-            self._ensure_circuit(
+            self._ensure_circuit_exists(
                 circuit_id=circuit_id,
                 name=event['circuitName'],
                 country=event['country'],
                 locality=event['locality']
             )
 
-            race = self.db.query(Race).filter(
-                Race.season == year,
-                Race.round == event['round']
-            ).first()
+            round_number = int(event['round'])
+            race = existing_races.get(round_number)
 
             race_date = pd.to_datetime(event['raceDate']).date() if pd.notna(event.get('raceDate')) else None
 
-            if not race:
+            if race is None:
                 race = Race(
                     season=year,
-                    round=int(event['round']),
+                    round=round_number,
                     name=event['raceName'],
                     circuit_id=circuit_id,
                     date=race_date,
                 )
                 self.db.add(race)
+                existing_races[round_number] = race
 
             races.append(race)
 
         self.db.flush()
         return races
 
-    def _sync_drivers_modern(self, year: int) -> tuple[list[Driver], list[Constructor], list[DriverEntry]]:
+    def _existing_driver_entries(self, year: int) -> dict[tuple[str, str], DriverEntry]:
+        """Prefetch a season's driver entries keyed by (driver_id,
+        constructor_id) — one query instead of one existence check per row."""
+        return {
+            (e.driver_id, e.constructor_id): e
+            for e in self.db.query(DriverEntry).filter(DriverEntry.season == year)
+        }
+
+    def _sync_drivers_modern(self, year: int) -> tuple[list[str], list[str], list[DriverEntry]]:
         """Sync drivers using FastF1 session data (2018+)."""
         schedule = fastf1.get_event_schedule(year)
 
@@ -326,11 +345,10 @@ class F1DataService:
         session = fastf1.get_session(year, first_round, 'R')
         session.load()
 
-        drivers = []
-        constructors = []
-        entries = []
-        seen_constructors = set()
-        seen_drivers = set()
+        existing_entries = self._existing_driver_entries(year)
+        entries: list[DriverEntry] = []
+        seen_constructors: set[str] = set()
+        seen_drivers: set[str] = set()
 
         for _, result in session.results.iterrows():
             # FastF1 strings can carry diacritics — resolve through the same
@@ -339,8 +357,7 @@ class F1DataService:
             constructor_id = self._resolve_constructor_id("", result['TeamName'])
 
             if constructor_id not in seen_constructors:
-                constructor = self._ensure_constructor(constructor_id, result['TeamName'])
-                constructors.append(constructor)
+                self._ensure_constructor_exists(constructor_id, result['TeamName'])
                 seen_constructors.add(constructor_id)
 
             driver_id = self._resolve_driver_id(
@@ -348,24 +365,16 @@ class F1DataService:
             )
 
             if driver_id not in seen_drivers:
-                driver = self._ensure_driver(
+                self._ensure_driver_exists(
                     driver_id,
                     result['FirstName'],
                     result['LastName'],
                     result.get('CountryCode')
                 )
-                drivers.append(driver)
                 seen_drivers.add(driver_id)
 
-            self.db.flush()
-
-            entry = self.db.query(DriverEntry).filter(
-                DriverEntry.season == year,
-                DriverEntry.driver_id == driver_id,
-                DriverEntry.constructor_id == constructor_id
-            ).first()
-
-            if not entry:
+            key = (driver_id, constructor_id)
+            if key not in existing_entries:
                 entry = DriverEntry(
                     season=year,
                     driver_id=driver_id,
@@ -374,23 +383,23 @@ class F1DataService:
                     driver_code=result['Abbreviation']
                 )
                 self.db.add(entry)
+                existing_entries[key] = entry
                 entries.append(entry)
 
         self.db.flush()
-        return drivers, constructors, entries
+        return list(seen_drivers), list(seen_constructors), entries
 
-    def _sync_drivers_ergast(self, year: int) -> tuple[list[Driver], list[Constructor], list[DriverEntry]]:
+    def _sync_drivers_ergast(self, year: int) -> tuple[list[str], list[str], list[DriverEntry]]:
         """Sync drivers using Ergast API (historical)."""
         results = self.ergast.get_race_results(year, round=1)
 
         if not results.content or results.content[0].empty:
             return [], [], []
 
-        drivers = []
-        constructors = []
-        entries = []
-        seen_constructors = set()
-        seen_drivers = set()
+        existing_entries = self._existing_driver_entries(year)
+        entries: list[DriverEntry] = []
+        seen_constructors: set[str] = set()
+        seen_drivers: set[str] = set()
 
         for _, result in results.content[0].iterrows():
             constructor_id = self._resolve_constructor_id(
@@ -398,12 +407,11 @@ class F1DataService:
             )
 
             if constructor_id not in seen_constructors:
-                constructor = self._ensure_constructor(
+                self._ensure_constructor_exists(
                     constructor_id,
                     result['constructorName'],
                     result.get('constructorNationality')
                 )
-                constructors.append(constructor)
                 seen_constructors.add(constructor_id)
 
             driver_id = self._resolve_driver_id(
@@ -415,25 +423,17 @@ class F1DataService:
                 if pd.notna(result.get('dateOfBirth')):
                     dob = pd.to_datetime(result['dateOfBirth']).date()
 
-                driver = self._ensure_driver(
+                self._ensure_driver_exists(
                     driver_id,
                     result['givenName'],
                     result['familyName'],
                     result.get('driverNationality'),
                     dob
                 )
-                drivers.append(driver)
                 seen_drivers.add(driver_id)
 
-            self.db.flush()
-
-            entry = self.db.query(DriverEntry).filter(
-                DriverEntry.season == year,
-                DriverEntry.driver_id == driver_id,
-                DriverEntry.constructor_id == constructor_id
-            ).first()
-
-            if not entry:
+            key = (driver_id, constructor_id)
+            if key not in existing_entries:
                 entry = DriverEntry(
                     season=year,
                     driver_id=driver_id,
@@ -442,10 +442,11 @@ class F1DataService:
                     driver_code=result.get('code')
                 )
                 self.db.add(entry)
+                existing_entries[key] = entry
                 entries.append(entry)
 
         self.db.flush()
-        return drivers, constructors, entries
+        return list(seen_drivers), list(seen_constructors), entries
 
     # ─────────────────────────────────────────────────────────────────────
     # Race results
@@ -564,13 +565,13 @@ class F1DataService:
             constructor_id = self._resolve_constructor_id(
                 result['constructorId'], result['constructorName']
             )
-            self._ensure_driver(
+            self._ensure_driver_exists(
                 driver_id,
                 result['givenName'],
                 result['familyName'],
                 result.get('driverNationality')
             )
-            self._ensure_constructor(
+            self._ensure_constructor_exists(
                 constructor_id,
                 result['constructorName'],
                 result.get('constructorNationality')
@@ -687,10 +688,10 @@ class F1DataService:
             constructor_id = self._resolve_constructor_id(
                 row['constructorId'], row['constructorName']
             )
-            self._ensure_driver(
+            self._ensure_driver_exists(
                 driver_id, row['givenName'], row['familyName'], row.get('driverNationality')
             )
-            self._ensure_constructor(
+            self._ensure_constructor_exists(
                 constructor_id, row['constructorName'], row.get('constructorNationality')
             )
 
@@ -730,6 +731,28 @@ class F1DataService:
             "constructor_standings": constructor_count,
         }
 
+    def _existing_driver_standings(self, year: int, round_num: int) -> dict[str, DriverStanding]:
+        """Prefetch a (season, round)'s driver standings keyed by driver_id —
+        one query instead of one existence check per standings row."""
+        return {
+            s.driver_id: s
+            for s in self.db.query(DriverStanding).filter(
+                DriverStanding.season == year,
+                DriverStanding.round == round_num,
+            )
+        }
+
+    def _existing_constructor_standings(self, year: int, round_num: int) -> dict[str, ConstructorStanding]:
+        """Prefetch a (season, round)'s constructor standings keyed by
+        constructor_id — one query instead of one check per row."""
+        return {
+            s.constructor_id: s
+            for s in self.db.query(ConstructorStanding).filter(
+                ConstructorStanding.season == year,
+                ConstructorStanding.round == round_num,
+            )
+        }
+
     def _sync_driver_standings(self, year: int, round_num: int) -> int:
         """Sync driver standings for a specific season/round from Ergast."""
         standings_data = self.ergast.get_driver_standings(year, round=round_num)
@@ -737,6 +760,7 @@ class F1DataService:
         if not standings_data.content or standings_data.content[0].empty:
             return 0
 
+        existing = self._existing_driver_standings(year, round_num)
         count = 0
         for _, row in standings_data.content[0].iterrows():
             if not pd.notna(row['position']):
@@ -746,20 +770,14 @@ class F1DataService:
                 row['driverId'], row['givenName'], row['familyName']
             )
 
-            self._ensure_driver(
+            self._ensure_driver_exists(
                 driver_id,
                 row['givenName'],
                 row['familyName'],
                 row.get('driverNationality'),
             )
 
-            existing = self.db.query(DriverStanding).filter(
-                DriverStanding.season == year,
-                DriverStanding.round == round_num,
-                DriverStanding.driver_id == driver_id,
-            ).first()
-
-            if not existing:
+            if driver_id not in existing:
                 standing = DriverStanding(
                     season=year,
                     round=round_num,
@@ -769,6 +787,7 @@ class F1DataService:
                     wins=int(row['wins']) if pd.notna(row['wins']) else 0,
                 )
                 self.db.add(standing)
+                existing[driver_id] = standing
                 count += 1
 
         self.db.flush()
@@ -781,6 +800,7 @@ class F1DataService:
         if not standings_data.content or standings_data.content[0].empty:
             return 0
 
+        existing = self._existing_constructor_standings(year, round_num)
         count = 0
         for _, row in standings_data.content[0].iterrows():
             if not pd.notna(row['position']):
@@ -790,19 +810,13 @@ class F1DataService:
                 row['constructorId'], row['constructorName']
             )
 
-            self._ensure_constructor(
+            self._ensure_constructor_exists(
                 constructor_id,
                 row['constructorName'],
                 row.get('constructorNationality'),
             )
 
-            existing = self.db.query(ConstructorStanding).filter(
-                ConstructorStanding.season == year,
-                ConstructorStanding.round == round_num,
-                ConstructorStanding.constructor_id == constructor_id,
-            ).first()
-
-            if not existing:
+            if constructor_id not in existing:
                 standing = ConstructorStanding(
                     season=year,
                     round=round_num,
@@ -812,6 +826,7 @@ class F1DataService:
                     wins=int(row['wins']) if pd.notna(row['wins']) else 0,
                 )
                 self.db.add(standing)
+                existing[constructor_id] = standing
                 count += 1
 
         self.db.flush()
