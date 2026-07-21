@@ -61,49 +61,52 @@ class TestEnsureSeason:
 
 class TestEnsureCircuit:
     def test_creates_with_all_fields(self, service, db_session):
-        c = service._ensure_circuit("monza", "Autodromo Nazionale Monza", country="Italy", locality="Monza")
-        assert c.circuit_id == "monza"
+        service._ensure_circuit_exists("monza", "Autodromo Nazionale Monza", country="Italy", locality="Monza")
+        c = db_session.query(Circuit).filter_by(circuit_id="monza").one()
         assert c.country == "Italy"
         assert c.locality == "Monza"
 
-    def test_returns_existing(self, service, db_session):
+    def test_existing_not_overwritten(self, service, db_session):
         db_session.add(Circuit(circuit_id="monza", name="Original"))
         db_session.commit()
 
-        c = service._ensure_circuit("monza", "Should Be Ignored", country="Italy")
-        assert c.name == "Original"  # existing record returned, not overwritten
+        service._ensure_circuit_exists("monza", "Should Be Ignored", country="Italy")
+        c = db_session.query(Circuit).filter_by(circuit_id="monza").one()
+        assert c.name == "Original"  # existing record left untouched, not overwritten
         assert db_session.query(Circuit).count() == 1
 
 
 class TestEnsureDriver:
     def test_creates_with_dob_and_nationality(self, service, db_session):
-        d = service._ensure_driver(
+        service._ensure_driver_exists(
             "max_verstappen", "Max", "Verstappen", "NED", date(1997, 9, 30)
         )
-        assert d.driver_id == "max_verstappen"
+        d = db_session.query(Driver).filter_by(driver_id="max_verstappen").one()
         assert d.date_of_birth == date(1997, 9, 30)
         assert d.nationality == "NED"
 
-    def test_returns_existing(self, service, db_session):
+    def test_existing_not_overwritten(self, service, db_session):
         db_session.add(Driver(driver_id="max_verstappen", given_name="Max", family_name="Verstappen"))
         db_session.commit()
 
-        d = service._ensure_driver("max_verstappen", "Ignored", "Ignored")
+        service._ensure_driver_exists("max_verstappen", "Ignored", "Ignored")
+        d = db_session.query(Driver).filter_by(driver_id="max_verstappen").one()
         assert d.given_name == "Max"
         assert db_session.query(Driver).count() == 1
 
 
 class TestEnsureConstructor:
     def test_creates_with_nationality(self, service, db_session):
-        c = service._ensure_constructor("red_bull", "Red Bull Racing", "Austrian")
-        assert c.constructor_id == "red_bull"
+        service._ensure_constructor_exists("red_bull", "Red Bull Racing", "Austrian")
+        c = db_session.query(Constructor).filter_by(constructor_id="red_bull").one()
         assert c.nationality == "Austrian"
 
-    def test_returns_existing(self, service, db_session):
+    def test_existing_not_overwritten(self, service, db_session):
         db_session.add(Constructor(constructor_id="ferrari", name="Original"))
         db_session.commit()
 
-        c = service._ensure_constructor("ferrari", "Ignored")
+        service._ensure_constructor_exists("ferrari", "Ignored")
+        c = db_session.query(Constructor).filter_by(constructor_id="ferrari").one()
         assert c.name == "Original"
         assert db_session.query(Constructor).count() == 1
 
@@ -237,7 +240,7 @@ class TestSyncScheduleModern:
 
     def test_existing_race_is_not_duplicated(self, service, mock_fastf1, db_session):
         service._ensure_season(2024)
-        service._ensure_circuit("monza", "Monza Circuit")
+        service._ensure_circuit_exists("monza", "Monza Circuit")
         db_session.add(Race(season=2024, round=1, name="Existing", circuit_id="monza", date=date(2024, 9, 1)))
         db_session.commit()
 
@@ -394,8 +397,8 @@ class TestSyncDriversModern:
     def test_existing_entry_is_not_duplicated(self, service, mock_fastf1, db_session):
         # Pre-seed a DriverEntry; second sync should not insert a second one
         service._ensure_season(2024)
-        service._ensure_driver("max_verstappen", "Max", "Verstappen")
-        service._ensure_constructor("red_bull_racing", "Red Bull Racing")
+        service._ensure_driver_exists("max_verstappen", "Max", "Verstappen")
+        service._ensure_constructor_exists("red_bull_racing", "Red Bull Racing")
         db_session.add(DriverEntry(
             season=2024, driver_id="max_verstappen", constructor_id="red_bull_racing",
             driver_number=1, driver_code="VER",
@@ -468,8 +471,8 @@ class TestSyncDriversErgast:
 
     def test_existing_entry_is_not_duplicated(self, service, mock_ergast, db_session):
         service._ensure_season(1990)
-        service._ensure_driver("alain_prost", "Alain", "Prost")
-        service._ensure_constructor("ferrari", "Ferrari")
+        service._ensure_driver_exists("alain_prost", "Alain", "Prost")
+        service._ensure_constructor_exists("ferrari", "Ferrari")
         db_session.add(DriverEntry(
             season=1990, driver_id="alain_prost", constructor_id="ferrari",
         ))
@@ -517,7 +520,7 @@ class TestSyncRaceResultsRouting:
 def _seed_race(db_session, service, *, year=2024, round_number=1):
     """Pre-create a Race so race-result tests have a target row."""
     service._ensure_season(year)
-    service._ensure_circuit("monza", "Monza")
+    service._ensure_circuit_exists("monza", "Monza")
     race = Race(season=year, round=round_number, name="Race", circuit_id="monza", date=date(year, 9, 1))
     db_session.add(race)
     db_session.commit()
@@ -588,8 +591,8 @@ class TestSyncRaceResultsModern:
 
     def test_existing_result_not_duplicated(self, service, mock_fastf1, db_session):
         race = _seed_race(db_session, service)
-        service._ensure_driver("max_verstappen", "Max", "Verstappen")
-        service._ensure_constructor("red_bull_racing", "Red Bull Racing")
+        service._ensure_driver_exists("max_verstappen", "Max", "Verstappen")
+        service._ensure_constructor_exists("red_bull_racing", "Red Bull Racing")
         db_session.add(RaceResult(
             race_id=race.id, driver_id="max_verstappen",
             constructor_id="red_bull_racing", position=1, position_text="1", points=25,
@@ -628,7 +631,7 @@ class TestSyncRaceResultsErgast:
     def test_creates_drivers_and_constructors_implicitly(self, service, mock_ergast, db_session):
         # Pre-seed only the race; driver/constructor must be created by the sync
         service._ensure_season(1990)
-        service._ensure_circuit("monza", "Monza")
+        service._ensure_circuit_exists("monza", "Monza")
         race = Race(season=1990, round=1, name="Race", circuit_id="monza", date=date(1990, 9, 1))
         db_session.add(race)
         db_session.commit()
@@ -648,7 +651,7 @@ class TestSyncRaceResultsErgast:
 
     def test_handles_nan_position(self, service, mock_ergast, db_session):
         service._ensure_season(1990)
-        service._ensure_circuit("monza", "Monza")
+        service._ensure_circuit_exists("monza", "Monza")
         db_session.add(Race(season=1990, round=1, name="R", circuit_id="monza", date=date(1990, 9, 1)))
         db_session.commit()
 
@@ -668,9 +671,9 @@ class TestSyncRaceResultsErgast:
 
     def test_existing_result_not_duplicated(self, service, mock_ergast, db_session):
         service._ensure_season(1990)
-        service._ensure_driver("alain_prost", "Alain", "Prost")
-        service._ensure_constructor("ferrari", "Ferrari")
-        service._ensure_circuit("monza", "Monza")
+        service._ensure_driver_exists("alain_prost", "Alain", "Prost")
+        service._ensure_constructor_exists("ferrari", "Ferrari")
+        service._ensure_circuit_exists("monza", "Monza")
         race = Race(season=1990, round=1, name="R", circuit_id="monza", date=date(1990, 9, 1))
         db_session.add(race)
         db_session.flush()
@@ -703,7 +706,7 @@ class TestSyncStandings:
 
     def test_uses_last_round_with_date_in_past(self, service, mock_ergast, db_session):
         service._ensure_season(2024)
-        service._ensure_circuit("monza", "Monza")
+        service._ensure_circuit_exists("monza", "Monza")
         today = date.today()
         # Round 5 is in the past; round 6 is in the future and must be ignored
         db_session.add_all([
@@ -790,7 +793,7 @@ class TestSyncDriverStandings:
 
     def test_existing_standing_not_duplicated(self, service, mock_ergast, db_session):
         service._ensure_season(2024)
-        service._ensure_driver("max_verstappen", "Max", "Verstappen")
+        service._ensure_driver_exists("max_verstappen", "Max", "Verstappen")
         db_session.add(DriverStanding(
             season=2024, round=22, driver_id="max_verstappen",
             position=1, points=575.0, wins=19,
@@ -864,7 +867,7 @@ class TestSyncConstructorStandings:
 
     def test_existing_standing_not_duplicated(self, service, mock_ergast, db_session):
         service._ensure_season(2024)
-        service._ensure_constructor("red_bull", "Red Bull")
+        service._ensure_constructor_exists("red_bull", "Red Bull")
         db_session.add(ConstructorStanding(
             season=2024, round=22, constructor_id="red_bull",
             position=1, points=860.0, wins=21,
