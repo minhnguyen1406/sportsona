@@ -7,7 +7,8 @@
  */
 
 import { browser } from '$app/environment';
-import type { TokenResponse, UserRead } from '$lib/api';
+import type { TokenResponse } from '$lib/api/client';
+import type { UserRead } from '$lib/api/auth';
 
 const ACCESS_KEY = 'sportsona.access_token';
 const REFRESH_KEY = 'sportsona.refresh_token';
