@@ -5,12 +5,12 @@ from slowapi.errors import RateLimitExceeded
 
 from app.auth.rate_limit import limiter
 from app.core.config import settings
-from app.routers.ask import router as ask_router
-from app.routers.auth import router as auth_router
-from app.routers.f1 import f1_router
-from app.routers.recap import router as recap_router
-from app.routers.stat_of_day import router as stat_of_day_router
-from app.routers.users import router as users_router
+from app.features.ask.router import router as ask_router
+from app.auth.router import router as auth_router
+from app.sports.f1.routers import f1_router
+from app.features.recap.router import router as recap_router
+from app.features.stat_of_day.router import router as stat_of_day_router
+from app.users.router import router as users_router
 
 
 # Refuse to boot in a non-development environment with the known dev

@@ -3,7 +3,7 @@
 Tests use a real SQLite session (with an attached ``f1`` schema) so SQLAlchemy
 behavior is exercised end-to-end. External I/O — FastF1 sessions and the
 Ergast API client — is mocked at the module-import boundary inside
-``app.services.f1.sync_service``.
+``app.sports.f1.services.sync_service``.
 """
 
 from __future__ import annotations

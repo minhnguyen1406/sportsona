@@ -34,7 +34,7 @@ from app.models import (  # noqa: E402
     RaceResult,
     User,
 )
-from app.services.recap import RecapService, get_llm_client  # noqa: E402
+from app.features.recap import RecapService, get_llm_client  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -119,8 +119,8 @@ def main() -> int:
         )
 
         if args.dry_run:
-            from app.services.recap import SYSTEM_PROMPT, render_user_message
-            from app.services.recap.assembler import assemble_context
+            from app.features.recap import SYSTEM_PROMPT, render_user_message
+            from app.features.recap.assembler import assemble_context
 
             ctx = assemble_context(db, user, race)
             user_message = render_user_message(ctx)

@@ -97,20 +97,20 @@ def mock_fastf1(mocker):
     Covers ``fastf1.Cache.enable_cache`` (called in __init__) and the
     ``get_event_schedule`` / ``get_session`` functions used during sync.
     """
-    return mocker.patch("app.services.f1.sync_service.fastf1")
+    return mocker.patch("app.sports.f1.services.sync_service.fastf1")
 
 
 @pytest.fixture
 def mock_ergast(mocker):
     """Replace the ``Ergast`` class so ``service.ergast`` is a MagicMock."""
     fake = MagicMock()
-    mocker.patch("app.services.f1.sync_service.Ergast", return_value=fake)
+    mocker.patch("app.sports.f1.services.sync_service.Ergast", return_value=fake)
     return fake
 
 
 @pytest.fixture
 def service(db_session, mock_fastf1, mock_ergast):
-    from app.services.f1.sync_service import F1DataService
+    from app.sports.f1.services.sync_service import F1DataService
 
     return F1DataService(db_session)
 

@@ -11,7 +11,7 @@ from app.auth.tokens import (
     issue_one_time_token,
 )
 from app.models import OneTimeToken, User
-from app.services.email import EmailService, get_email_service
+from app.common.email import EmailService, get_email_service
 from tests._seed import make_user
 
 
