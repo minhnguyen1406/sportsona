@@ -1,11 +1,11 @@
 from app.core.database import Base
-from app.models.user import User
-from app.models.auth import OneTimeToken, RevokedRefreshToken
-from app.models.ask_answer import AskAnswer
-from app.models.ask_cache import AskCache
-from app.models.recap import RaceRecap
-from app.models.stat_of_day import StatOfDay
-from app.models.f1 import (
+from app.users.models import User
+from app.auth.models import OneTimeToken, RevokedRefreshToken
+from app.features.ask.answer import AskAnswer
+from app.features.ask.cache import AskCache
+from app.features.recap.models import RaceRecap
+from app.features.stat_of_day.models import StatOfDay
+from app.sports.f1.models import (
     SCHEMA as F1_SCHEMA,
     Season,
     Driver,

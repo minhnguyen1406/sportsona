@@ -52,7 +52,7 @@ def run_sync() -> None:
     # daemon before its first retry.
     from app.core.database import SessionLocal
     from app.models import Race
-    from app.services import F1DataService
+    from app.sports.f1.services import F1DataService
 
     year = _current_season()
     logger.info("Sync starting for season %s", year)

@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app.core.database import SessionLocal
 from app.models import Race, RaceResult
-from app.services import F1DataService
+from app.sports.f1.services import F1DataService
 
 
 # Stay well under Ergast's 4 req/s ceiling. The internal sync also fans out

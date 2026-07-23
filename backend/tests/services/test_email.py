@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from app.services.email import LoggingEmailService, get_email_service
+from app.common.email import LoggingEmailService, get_email_service
 
 
 def test_default_service_is_logging_service():
@@ -13,7 +13,7 @@ def test_default_service_is_logging_service():
 
 def test_logging_service_writes_to_logger(caplog):
     service = LoggingEmailService()
-    with caplog.at_level(logging.INFO, logger="app.services.email"):
+    with caplog.at_level(logging.INFO, logger="app.common.email"):
         service.send(to="x@example.com", subject="Hi", body="hello")
 
     record = next(r for r in caplog.records if "[EMAIL]" in r.getMessage())
