@@ -61,7 +61,7 @@
 
 <Card class="p-6 space-y-4 border-accent/40">
   <div class="flex items-center justify-between gap-3">
-    <h2 class="text-xs uppercase tracking-widest text-accent font-semibold">
+    <h2 class="text-xs uppercase tracking-widest text-rose-ink font-semibold">
       Your recap{raceName ? ` — ${raceName}` : ''}
     </h2>
     {#if recap}

@@ -55,8 +55,8 @@
     <p class="text-xs uppercase tracking-widest text-muted-foreground">
       {#if stat}{formatDate(stat.date)}{:else}Today{/if}
     </p>
-    <h1 class="text-3xl font-black italic tracking-tight">
-      Stat of the day<span class="text-accent">.</span>
+    <h1 class="text-3xl font-black tracking-tight">
+      Stat of the day<span class="text-rose-ink">.</span>
     </h1>
     <p class="text-muted-foreground">
       A fresh F1 angle each day, picked by Claude and grounded in the database.
@@ -79,7 +79,7 @@
         <h2 class="text-xl font-semibold mt-1">{stat.question}</h2>
       </div>
 
-      <p class="text-base leading-relaxed border-l-4 border-accent pl-4 italic">
+      <p class="text-base leading-relaxed border-l-4 border-accent pl-4">
         {stat.narration}
       </p>
 

@@ -75,8 +75,7 @@
               <td
                 class="px-4 py-2 whitespace-nowrap"
                 class:text-right={numericByCol[j]}
-                class:font-mono={numericByCol[j]}
-                class:tabular-nums={numericByCol[j]}
+                class:sp-fig={numericByCol[j]}
                 class:text-muted-foreground={cell === null || cell === undefined}
               >
                 {fmt(cell)}

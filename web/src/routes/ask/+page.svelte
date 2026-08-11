@@ -106,8 +106,8 @@
 
 <div class="space-y-8 max-w-4xl mx-auto">
   <header class="text-center space-y-2">
-    <h1 class="text-3xl font-black italic tracking-tight">
-      Ask<span class="text-accent">.</span>
+    <h1 class="text-3xl font-black tracking-tight">
+      Ask<span class="text-rose-ink">.</span>
     </h1>
     <p class="text-muted-foreground">
       Any F1 stats question. Answered with real data — never invented.
@@ -168,7 +168,7 @@
       </div>
 
       {#if result.reasoning}
-        <p class="text-sm italic text-muted-foreground">{result.reasoning}</p>
+        <p class="text-sm text-muted-foreground">{result.reasoning}</p>
       {/if}
 
       {#if result.row_count === 0}

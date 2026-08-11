@@ -1,7 +1,8 @@
 # Sportsona
 
 Personalised, multi-sport companion app. F1-first; more sports coming. The icon
-is an italic dreamsicle **S** on a warm-cocoa tile (`backend/web/static/favicon.svg`).
+is **"The Rise"** — three ascending bars with a rose head — on an Electric Grape
+tile (`web/static/favicon.svg`).
 
 ```
 sportsona/
@@ -133,11 +134,18 @@ docker compose exec sportsona-backend alembic upgrade head
 - Frontend reference & yarn-only commands: [`web/README.md`](web/README.md)
 - Project plan: [`SPORTSONA_PROJECT_PLAN.md`](SPORTSONA_PROJECT_PLAN.md)
 
-## Branding
+## Branding — "The Rise" rebrand
 
-- Mark: italic Inter Black **S** on cocoa gradient `#3B1F12 → #150804`,
-  dreamsicle `#F47B3F` accents
-- Tokens live in `web/src/app.css` (`--mark-cocoa`, etc.)
-- Source SVGs in `web/static/favicon.svg`, `web/static/logo-mark.svg`,
-  `web/static/logos/d-mark-wordmark.svg`
-- Svelte component: `web/src/lib/components/Logo.svelte`
+- **Mark**: three ascending bars where the tallest grows a rose **head** (a
+  performance chart and a person are the same object). The head is the
+  trademark — always rose, never optional. Bars take the contrast colour of the
+  surface: Grape on light, Sand on dark.
+- **Palette**: Electric Grape `#2A1247` (primary / all dark surfaces), Rose
+  `#E8607F` (accent — "you" and "now", one per view), warm Sand `#F3EEE2`
+  (page ground), plus Court Teal / Volt for non-semantic chart & sport tags.
+  **No gradients** — dark depth comes from flat Grape 900 → 800 → 700 steps.
+- **Type**: Figtree only (300–900). Numbers get `.sp-stat` / `.sp-fig`
+  (900/800 + tabular) so one typeface still reads as sport.
+- Tokens live in `web/src/app.css` (shadcn names, bare-HSL triples).
+- Source SVGs: `web/static/favicon.svg` (grape tile), `web/static/logos/*`
+  (mark, mark-light, mark-mono). Svelte component: `web/src/lib/components/Logo.svelte`.

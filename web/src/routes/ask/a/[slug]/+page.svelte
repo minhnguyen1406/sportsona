@@ -36,14 +36,14 @@
     <p class="text-xs uppercase tracking-widest text-muted-foreground">
       Shared answer · {formatDate(answer.created_at)}
     </p>
-    <h1 class="text-2xl font-black italic tracking-tight leading-snug">
-      {answer.question}<span class="text-accent">?</span>
+    <h1 class="text-2xl font-black tracking-tight leading-snug">
+      {answer.question}<span class="text-rose-ink">?</span>
     </h1>
   </header>
 
   <Card class="p-6 space-y-5">
     {#if answer.reasoning}
-      <p class="text-sm italic text-muted-foreground">{answer.reasoning}</p>
+      <p class="text-sm text-muted-foreground">{answer.reasoning}</p>
     {/if}
 
     {#if answer.rows.length === 0}

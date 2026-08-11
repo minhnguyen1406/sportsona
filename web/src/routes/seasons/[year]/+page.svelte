@@ -103,7 +103,7 @@
             <tbody class="divide-y divide-border">
               {#each races as r (r.id)}
                 <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 font-mono text-muted-foreground">{r.round}</td>
+                  <td class="px-4 py-3 sp-fig text-muted-foreground">{r.round}</td>
                   <td class="px-4 py-3">
                     <a href="/races/{r.id}" class="font-medium hover:text-primary">{r.name}</a>
                   </td>
@@ -138,7 +138,7 @@
             <tbody class="divide-y divide-border">
               {#each driverStandings as s (s.id)}
                 <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 font-mono">{s.position}</td>
+                  <td class="px-4 py-3 sp-fig">{s.position}</td>
                   <td class="px-4 py-3">
                     <a
                       href="/drivers/{s.driver.driver_id}"
@@ -174,7 +174,7 @@
             <tbody class="divide-y divide-border">
               {#each constructorStandings as s (s.id)}
                 <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 font-mono">{s.position}</td>
+                  <td class="px-4 py-3 sp-fig">{s.position}</td>
                   <td class="px-4 py-3">
                     <a
                       href="/constructors/{s.constructor.constructor_id}"

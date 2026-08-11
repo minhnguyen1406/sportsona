@@ -36,119 +36,160 @@
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
 
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  --radius: 0.5rem;
+  /* Chart / sport-tagging series — non-semantic, never a page background. */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  /* Figtree only — 300–900. Inter + Alfa Slab One are gone. */
+  --font-sans: 'Figtree', system-ui, sans-serif;
+
+  --radius: 0.875rem;
 }
 
-/* Sportsona brand — bold cream + red + dreamsicle on ink.
-   Primary = red (brand action), Accent = dreamsicle (persona / special CTA).
-   Light mode uses ivory base; dark mode flips to ink. */
+/* ═══════════════════════════════════════════════════════════════════════════
+   Sportsona rebrand — "The Rise". Electric Grape + Rose on warm Sand.
+   No gradients: dark depth comes from flat Grape 900 → 800 → 700 steps.
+   Same shadcn token names + bare-HSL-triple format, so components are untouched.
+   ═══════════════════════════════════════════════════════════════════════════ */
 @layer base {
   :root {
-    /* white page bg */
-    --background: 0 0% 100%;
-    /* ink type → #1A0F0A */
-    --foreground: 19 44% 7%;
+    /* Surfaces — warm Sand, not white. A cool grey next to grape reads clinical. */
+    --background: 42 41% 92%;          /* Sand 100  #F3EEE2 */
+    --foreground: 281 38% 11%;         /* Ink       #211228 */
+    --card: 40 60% 96%;                /* Sand 50   #FBF7EF */
+    --card-foreground: 281 38% 11%;
+    --popover: 40 60% 96%;
+    --popover-foreground: 281 38% 11%;
 
-    /* white card surface for max contrast vs ivory */
-    --card: 0 0% 100%;
-    --card-foreground: 19 44% 7%;
+    /* Primary = Electric Grape #2A1247 — every dark surface, primary actions */
+    --primary: 267 60% 17%;
+    --primary-foreground: 42 41% 92%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 19 44% 7%;
+    /* Secondary / muted = warm sand fills + secondary text */
+    --secondary: 42 38% 86%;           /* Sand 200  #E9E1CE */
+    --secondary-foreground: 281 38% 11%;
+    --muted: 42 38% 86%;
+    --muted-foreground: 37 17% 32%;    /* Sand 600  #5F5443 */
 
-    /* Primary = bold red #D63837 */
-    --primary: 0 63% 53%;
-    --primary-foreground: 39 56% 90%;
+    /* Accent = Rose #E8607F — "you", and "now". One per view. */
+    --accent: 346 75% 64%;
+    --accent-foreground: 340 65% 14%;  /* #3A0C1C — dark text ON rose */
 
-    /* Secondary = warm cream surface */
-    --secondary: 39 56% 90%;
-    --secondary-foreground: 19 44% 7%;
+    /* Destructive is now its OWN colour, no longer shared with primary */
+    --destructive: 353 64% 47%;        /* Flag Red  #C42B3E */
+    --destructive-foreground: 40 60% 96%;
 
-    --muted: 39 56% 90%;
-    --muted-foreground: 17 28% 35%;
+    /* Status */
+    --success: 148 67% 37%;            /* #1F9E5A */
+    --success-foreground: 40 60% 96%;
+    --warning: 40 91% 47%;             /* #E39A0B */
+    --warning-foreground: 281 38% 11%;
+    --info: 210 54% 50%;               /* #3B7FC4 */
+    --info-foreground: 40 60% 96%;
 
-    /* Accent = dreamsicle #F47B3F (the persona color) */
-    --accent: 21 89% 60%;
-    --accent-foreground: 39 56% 96%;
+    /* Lines / focus */
+    --border: 42 38% 86%;
+    --input: 42 38% 86%;
+    --ring: 346 75% 64%;               /* rose focus ring */
 
-    /* Destructive shares the brand red — fine since red is reserved for
-       attention-getting actions across the board */
-    --destructive: 0 63% 53%;
-    --destructive-foreground: 39 56% 90%;
+    /* Chart / sport tagging — non-semantic series colours. */
+    --chart-1: 267 60% 17%;            /* Grape 700 */
+    --chart-2: 172 79% 40%;            /* Court Teal #16B8A3 */
+    --chart-3: 71 77% 57%;             /* Volt       #C8E63C */
+    --chart-4: 346 75% 64%;            /* Rose */
+    --chart-5: 266 34% 63%;            /* Grape 300 */
 
-    --success: 160 84% 39%;
-    --success-foreground: 39 56% 96%;
-
-    /* Warning = warm gold #E8A92E */
-    --warning: 40 81% 54%;
-    --warning-foreground: 19 44% 7%;
-
-    /* Borders use a warm tan — sits between cream and the page bg */
-    --border: 38 35% 82%;
-    --input: 38 35% 82%;
-    --ring: 0 63% 53%;
-
-    /* Cocoa gradient — the logo mark tile palette.
-       Use as `background-image: var(--mark-cocoa)` anywhere the brand
-       cocoa surface is wanted (hero bands, badges, dark-mode page bg). */
-    --mark-cocoa-start: 15 53% 15%;  /* #3B1F12 */
-    --mark-cocoa-end: 20 67% 5%;     /* #150804 */
-    --mark-cocoa: linear-gradient(135deg, hsl(15 53% 15%), hsl(20 67% 5%));
+    --radius: 0.875rem;
   }
 
   .dark {
-    /* Cocoa start tone as the solid background fallback. The real page
-       gets the cocoa gradient via the .dark body rule below — this HSL
-       value just keeps any `bg-background` utilities in sync. */
-    --background: 15 53% 15%;
-    /* Cream type → #F4ECD8 */
-    --foreground: 39 56% 90%;
+    /* Flat steps. No gradient. Depth comes from 900 → 800 → 700. */
+    --background: 269 67% 8%;          /* Grape 900 #150724 */
+    --foreground: 42 41% 92%;          /* Sand 100  #F3EEE2 */
+    --card: 267 61% 13%;               /* Grape 800 #1F0D35 */
+    --card-foreground: 42 41% 92%;
+    --popover: 267 60% 17%;            /* Grape 700 */
+    --popover-foreground: 42 41% 92%;
 
-    --card: 19 33% 11%;
-    --card-foreground: 39 56% 90%;
+    /* On dark, rose becomes primary — grape is the surface, so it can't also
+       be the action. This is the one role that swaps between themes. */
+    --primary: 346 75% 64%;
+    --primary-foreground: 340 65% 14%;
 
-    --popover: 19 33% 11%;
-    --popover-foreground: 39 56% 90%;
+    --secondary: 267 46% 24%;          /* Grape 600 */
+    --secondary-foreground: 42 41% 92%;
+    --muted: 267 46% 24%;
+    --muted-foreground: 266 34% 63%;   /* Grape 300 — 4.9:1, min 13px */
 
-    /* Primary lifted slightly for dark surface contrast */
-    --primary: 0 73% 60%;
-    --primary-foreground: 39 56% 96%;
+    --accent: 347 78% 73%;             /* Rose 400 — lifted for dark surfaces */
+    --accent-foreground: 340 65% 14%;
 
-    --secondary: 19 33% 18%;
-    --secondary-foreground: 39 56% 90%;
+    --destructive: 353 70% 62%;
+    --destructive-foreground: 269 67% 8%;
 
-    --muted: 19 33% 18%;
-    --muted-foreground: 39 30% 70%;
+    --success: 148 55% 60%;
+    --success-foreground: 269 67% 8%;
+    --warning: 40 88% 66%;
+    --warning-foreground: 269 67% 8%;
+    --info: 210 60% 73%;
+    --info-foreground: 269 67% 8%;
 
-    --accent: 21 89% 65%;
-    --accent-foreground: 19 44% 7%;
+    --border: 267 46% 24%;
+    --input: 267 46% 24%;
+    --ring: 346 75% 64%;
 
-    --destructive: 0 73% 60%;
-    --destructive-foreground: 39 56% 96%;
-
-    --success: 158 64% 52%;
-    --success-foreground: 19 44% 7%;
-
-    --warning: 43 96% 60%;
-    --warning-foreground: 19 44% 7%;
-
-    --border: 19 33% 18%;
-    --input: 19 33% 18%;
-    --ring: 0 73% 60%;
+    --chart-1: 42 41% 92%;
+    --chart-2: 172 79% 40%;
+    --chart-3: 71 77% 57%;
+    --chart-4: 346 75% 64%;
+    --chart-5: 266 34% 63%;
   }
 
   body {
+    font-family: 'Figtree', system-ui, sans-serif;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+}
 
-  /* In dark mode the page wears the same cocoa gradient as the logo tile —
-     so the icon feels like a small window into the rest of the surface. */
-  .dark body {
-    background-image: var(--mark-cocoa);
-    background-attachment: fixed;
-  }
+/* ─── Numerals ───────────────────────────────────────────────────────────────
+   Figtree has no scoreboard presence by default — numbers have to ask for it.
+   `.sp-stat` on any hero figure (40px+), `.sp-fig` on anything in a column.
+   Tabular figures are non-negotiable in tables: without them columns visibly
+   wobble as live scores update. */
+.sp-stat {
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+.sp-fig {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Rose as TEXT. Rose 500 on Sand is only 2.8:1 — fails. So rose text on light
+   uses Rose 700 (#B0304F, 5.4:1); on dark it becomes the lifted accent on
+   grape (passes). Use this for any rose-coloured *text*; `text-accent` /
+   `bg-accent` stay for fills, where accent-foreground provides the contrast. */
+.text-rose-ink {
+  color: #b0304f;
+}
+:root:is(.dark *) .text-rose-ink,
+.dark .text-rose-ink {
+  color: hsl(var(--accent));
 }

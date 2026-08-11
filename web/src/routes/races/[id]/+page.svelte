@@ -90,7 +90,7 @@
             <tbody class="divide-y divide-border">
               {#each results as r (r.id)}
                 <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 font-mono">
+                  <td class="px-4 py-3 sp-fig">
                     {r.position_text ?? (r.position ?? '—')}
                   </td>
                   <td class="px-4 py-3">
@@ -143,7 +143,7 @@
             <tbody class="divide-y divide-border">
               {#each qualifying as q (q.id)}
                 <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 font-mono">{q.position ?? '—'}</td>
+                  <td class="px-4 py-3 sp-fig">{q.position ?? '—'}</td>
                   <td class="px-4 py-3">
                     <a
                       href="/drivers/{q.driver.driver_id}"
@@ -155,13 +155,13 @@
                   <td class="px-4 py-3 hidden md:table-cell text-muted-foreground">
                     {q.constructor.name}
                   </td>
-                  <td class="px-4 py-3 hidden sm:table-cell font-mono text-xs">
+                  <td class="px-4 py-3 hidden sm:table-cell sp-fig text-xs">
                     {q.q1_time ?? '—'}
                   </td>
-                  <td class="px-4 py-3 hidden sm:table-cell font-mono text-xs">
+                  <td class="px-4 py-3 hidden sm:table-cell sp-fig text-xs">
                     {q.q2_time ?? '—'}
                   </td>
-                  <td class="px-4 py-3 hidden sm:table-cell font-mono text-xs">
+                  <td class="px-4 py-3 hidden sm:table-cell sp-fig text-xs">
                     {q.q3_time ?? '—'}
                   </td>
                 </tr>
