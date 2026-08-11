@@ -44,14 +44,22 @@
     const v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
   }
+
+  /** Avatar initials: two names → their initials (LN); one name → first 3 (FER). */
+  function initials(a: string, b?: string): string {
+    if (b) return (a[0] + b[0]).toUpperCase();
+    return a.slice(0, 3).toUpperCase();
+  }
 </script>
 
-<div class="space-y-8">
+<div class="space-y-6">
   <header class="space-y-1">
-    <h1 class="text-3xl font-bold tracking-tight">
-      Welcome back, <span class="text-primary">{auth.user?.username ?? '…'}</span>
+    <p class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground">
+      Your season
+    </p>
+    <h1 class="text-3xl font-extrabold tracking-tight" style:letter-spacing="-0.032em">
+      Welcome back, {auth.user?.username ?? '…'}<span class="text-rose-ink">.</span>
     </h1>
-    <p class="text-muted-foreground">Your followed drivers, teams, and the next race.</p>
   </header>
 
   {#if loading}
@@ -62,37 +70,13 @@
   {:else if error}
     <p class="text-destructive">{error}</p>
   {:else if dashboard}
-    <!-- Next race -->
-    <Card class="p-6">
-      <div class="flex items-baseline justify-between mb-2">
-        <h2 class="text-xs uppercase tracking-wider text-muted-foreground">Next race</h2>
-        {#if dashboard.next_race}
-          <Badge variant="accent">Round {dashboard.next_race.round}</Badge>
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_322px] items-start">
+      <!-- ── Main column ── -->
+      <div class="space-y-6">
+        <!-- Personalized recap of the latest race -->
+        {#if latestRace}
+          <RecapCard raceId={latestRace.race_id} raceName={latestRace.race_name} />
         {/if}
-      </div>
-      {#if dashboard.next_race}
-        <a
-          href="/races/{dashboard.next_race.id}"
-          class="text-2xl font-semibold hover:text-primary transition-colors"
-        >
-          {dashboard.next_race.name}
-        </a>
-        <div class="text-sm text-muted-foreground mt-1">
-          {dashboard.next_race.circuit.name}
-          {#if dashboard.next_race.circuit.country}
-            · {dashboard.next_race.circuit.country}
-          {/if}
-          · {formatDate(dashboard.next_race.date)}
-        </div>
-      {:else}
-        <p class="text-muted-foreground">No upcoming races scheduled.</p>
-      {/if}
-    </Card>
-
-    <!-- Personalized recap of the latest race -->
-    {#if latestRace}
-      <RecapCard raceId={latestRace.race_id} raceName={latestRace.race_name} />
-    {/if}
 
     <!-- Followed drivers -->
     <section class="space-y-3">
@@ -109,7 +93,7 @@
           </p>
         </Card>
       {:else}
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2">
           {#each dashboard.followed_drivers as fd (fd.driver.driver_id)}
             <Card class="p-5">
               <div class="flex items-start justify-between mb-2">
@@ -200,5 +184,89 @@
         </div>
       {/if}
     </section>
+      </div>
+      <!-- /main -->
+
+      <!-- ── Rail ── -->
+      <aside class="space-y-6">
+        <Card class="p-5">
+          <p class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-muted-foreground mb-2">
+            Next race
+          </p>
+          {#if dashboard.next_race}
+            <a
+              href="/races/{dashboard.next_race.id}"
+              class="text-lg font-extrabold hover:text-primary transition-colors"
+              style:letter-spacing="-0.02em"
+            >
+              {dashboard.next_race.name}
+            </a>
+            <div class="text-sm text-muted-foreground mt-1">
+              Round {dashboard.next_race.round} · {dashboard.next_race.circuit.name}
+            </div>
+            <div class="text-sm text-muted-foreground">{formatDate(dashboard.next_race.date)}</div>
+          {:else}
+            <p class="text-sm text-muted-foreground">No upcoming races scheduled.</p>
+          {/if}
+        </Card>
+
+        {#if dashboard.followed_drivers.length + dashboard.followed_constructors.length > 0}
+          <Card class="p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-extrabold tracking-tight">Who you follow</h3>
+              <span class="text-xs text-muted-foreground">
+                {dashboard.followed_drivers.length + dashboard.followed_constructors.length}
+              </span>
+            </div>
+            <div class="flex flex-col">
+              {#each dashboard.followed_drivers as fd (fd.driver.driver_id)}
+                <a
+                  href="/drivers/{fd.driver.driver_id}"
+                  class="flex items-center gap-3 py-2.5 border-b border-border last:border-0 group"
+                >
+                  <span
+                    class="h-8 w-8 rounded-[10px] grid place-items-center text-[11px] font-extrabold shrink-0"
+                    style="background: var(--sp-sand-200); color: var(--sp-sand-600)"
+                  >{initials(fd.driver.given_name, fd.driver.family_name)}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-bold truncate group-hover:text-primary transition-colors">
+                      {fd.driver.given_name} {fd.driver.family_name}
+                    </span>
+                    <span class="block text-[11.5px] text-muted-foreground">
+                      Formula 1{#if fd.current_standing} · P{fd.current_standing.position}{/if}
+                    </span>
+                  </span>
+                  {#if fd.current_standing}
+                    <span class="sp-fig text-sm ml-auto">{fd.current_standing.points}</span>
+                  {/if}
+                </a>
+              {/each}
+              {#each dashboard.followed_constructors as fc (fc.constructor.constructor_id)}
+                <a
+                  href="/constructors/{fc.constructor.constructor_id}"
+                  class="flex items-center gap-3 py-2.5 border-b border-border last:border-0 group"
+                >
+                  <span
+                    class="h-8 w-8 rounded-[10px] grid place-items-center text-[11px] font-extrabold shrink-0"
+                    style="background: var(--sp-sand-200); color: var(--sp-sand-600)"
+                  >{initials(fc.constructor.name)}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-bold truncate group-hover:text-primary transition-colors">
+                      {fc.constructor.name}
+                    </span>
+                    <span class="block text-[11.5px] text-muted-foreground">
+                      Constructor{#if fc.current_standing} · P{fc.current_standing.position}{/if}
+                    </span>
+                  </span>
+                  {#if fc.current_standing}
+                    <span class="sp-fig text-sm ml-auto">{fc.current_standing.points}</span>
+                  {/if}
+                </a>
+              {/each}
+            </div>
+          </Card>
+        {/if}
+      </aside>
+    </div>
   {/if}
 </div>

@@ -12,6 +12,11 @@
     f1Api
   } from '$lib/api';
   import { formatDate } from '$lib/date';
+  import { follows } from '$lib/follow.svelte';
+
+  // Populate the follow sets so a signed-in user's followed drivers/teams
+  // stand out (rose row) in the standings. No-ops when logged out.
+  onMount(() => follows.hydrate());
 
   type Tab = 'races' | 'drivers' | 'constructors';
   let tab = $state<Tab>('races');
@@ -137,18 +142,19 @@
             </thead>
             <tbody class="divide-y divide-border">
               {#each driverStandings as s (s.id)}
-                <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 sp-fig">{s.position}</td>
+                {@const followed = follows.isFollowingDriver(s.driver.driver_id)}
+                <tr class="hover:bg-muted/30 {followed ? 'bg-accent/10' : ''}">
+                  <td class="px-4 py-3 sp-fig {followed ? 'text-rose-ink' : ''}">{s.position}</td>
                   <td class="px-4 py-3">
                     <a
                       href="/drivers/{s.driver.driver_id}"
-                      class="font-medium hover:text-primary"
+                      class="hover:text-primary {followed ? 'font-extrabold' : 'font-medium'}"
                     >
                       {s.driver.given_name} {s.driver.family_name}
                     </a>
                   </td>
                   <td class="px-4 py-3 hidden sm:table-cell text-muted-foreground">{s.wins}</td>
-                  <td class="px-4 py-3 text-right font-medium">{s.points}</td>
+                  <td class="px-4 py-3 text-right sp-fig">{s.points}</td>
                 </tr>
               {/each}
             </tbody>
@@ -173,18 +179,19 @@
             </thead>
             <tbody class="divide-y divide-border">
               {#each constructorStandings as s (s.id)}
-                <tr class="hover:bg-muted/30">
-                  <td class="px-4 py-3 sp-fig">{s.position}</td>
+                {@const followed = follows.isFollowingConstructor(s.constructor.constructor_id)}
+                <tr class="hover:bg-muted/30 {followed ? 'bg-accent/10' : ''}">
+                  <td class="px-4 py-3 sp-fig {followed ? 'text-rose-ink' : ''}">{s.position}</td>
                   <td class="px-4 py-3">
                     <a
                       href="/constructors/{s.constructor.constructor_id}"
-                      class="font-medium hover:text-primary"
+                      class="hover:text-primary {followed ? 'font-extrabold' : 'font-medium'}"
                     >
                       {s.constructor.name}
                     </a>
                   </td>
                   <td class="px-4 py-3 hidden sm:table-cell text-muted-foreground">{s.wins}</td>
-                  <td class="px-4 py-3 text-right font-medium">{s.points}</td>
+                  <td class="px-4 py-3 text-right sp-fig">{s.points}</td>
                 </tr>
               {/each}
             </tbody>
