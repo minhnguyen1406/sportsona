@@ -73,31 +73,40 @@
   {:else if error}
     <Alert variant="destructive">{error}</Alert>
   {:else if stat}
-    <Card class="p-6 space-y-6">
-      <div>
-        <p class="text-xs uppercase tracking-widest text-muted-foreground">Today's question</p>
-        <h2 class="text-xl font-semibold mt-1">{stat.question}</h2>
-      </div>
-
-      <p class="text-base leading-relaxed border-l-4 border-accent pl-4">
+    <!-- The signature v3 hero: question + narration on a flat grape surface. -->
+    <div
+      class="rounded-[26px] p-8 space-y-3"
+      style="background: var(--sp-grape-700); color: var(--sp-sand-100)"
+    >
+      <p class="text-[11px] font-extrabold uppercase tracking-[0.14em]" style="color: var(--sp-rose-400)">
+        Stat of the day
+      </p>
+      <h2 class="text-2xl font-extrabold leading-snug" style="letter-spacing: -0.026em">
+        {stat.question}
+      </h2>
+      <p class="text-[15px] leading-relaxed" style="color: var(--sp-grape-200)">
         {stat.narration}
       </p>
+    </div>
 
-      {#if stat.rows.length > 0}
-        <ResultsTable columns={stat.columns} rows={stat.rows} />
-      {/if}
+    {#if stat.rows.length > 0 || stat.sql}
+      <Card class="p-6 space-y-6">
+        {#if stat.rows.length > 0}
+          <ResultsTable columns={stat.columns} rows={stat.rows} />
+        {/if}
 
-      <details class="text-sm">
-        <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
-          Show the SQL Claude wrote
-        </summary>
-        <pre
-          class="mt-3 rounded-md bg-muted/40 p-4 text-xs overflow-x-auto"><code>{stat.sql}</code></pre>
-      </details>
+        <details class="text-sm">
+          <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
+            Show the SQL Claude wrote
+          </summary>
+          <pre
+            class="mt-3 rounded-md bg-muted/40 p-4 text-xs overflow-x-auto"><code>{stat.sql}</code></pre>
+        </details>
 
-      <p class="text-xs text-muted-foreground border-t pt-3">
-        {stat.model} · generated {new Date(stat.created_at).toLocaleString()}
-      </p>
-    </Card>
+        <p class="text-xs text-muted-foreground border-t pt-3">
+          {stat.model} · generated {new Date(stat.created_at).toLocaleString()}
+        </p>
+      </Card>
+    {/if}
   {/if}
 </div>

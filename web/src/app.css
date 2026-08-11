@@ -161,6 +161,31 @@
     color: hsl(var(--foreground));
     font-feature-settings: 'rlig' 1, 'calt' 1;
   }
+
+  /* Raw brand scale — fixed hexes that DON'T flip with theme. Used for
+     "always-grape" chrome (header, hero cards, ask box) and rose surfaces
+     where the element reads the same in light and dark. Semantic shadcn
+     tokens above still drive everything theme-aware. */
+  :root {
+    --sp-grape-900: #150724;
+    --sp-grape-800: #1f0d35;
+    --sp-grape-700: #2a1247;
+    --sp-grape-600: #3a2159;
+    --sp-grape-300: #9b7fc0;
+    --sp-grape-200: #c9badd;
+    --sp-rose-700: #b0304f;
+    --sp-rose-500: #e8607f;
+    --sp-rose-400: #f0839b;
+    --sp-rose-100: #fce4ea;
+    --sp-sand-100: #f3eee2;
+    --sp-sand-600: #5f5443;
+    --sp-on-rose: #3a0c1c; /* dark ink for text on a rose fill */
+
+    /* Radii — v3 is rounder. r-lg (cards) 20px, r-md 14px, pill. */
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 26px;
+  }
 }
 
 /* ─── Numerals ───────────────────────────────────────────────────────────────

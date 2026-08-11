@@ -105,49 +105,54 @@
 </svelte:head>
 
 <div class="space-y-8 max-w-4xl mx-auto">
-  <header class="text-center space-y-2">
-    <h1 class="text-3xl font-black tracking-tight">
-      Ask<span class="text-rose-ink">.</span>
-    </h1>
-    <p class="text-muted-foreground">
-      Any F1 stats question. Answered with real data — never invented.
-    </p>
-  </header>
+  <!-- v3 ask box: input + examples live on a flat grape surface. -->
+  <div
+    class="rounded-[26px] p-8 space-y-4"
+    style="background: var(--sp-grape-700); color: var(--sp-sand-100)"
+  >
+    <div class="space-y-1">
+      <h1 class="text-3xl font-extrabold tracking-tight">
+        Ask<span style="color: var(--sp-rose-500)">.</span>
+      </h1>
+      <p class="text-[15px]" style="color: var(--sp-grape-200)">
+        Any F1 stats question. Answered with real data — never invented.
+      </p>
+    </div>
 
-  <form onsubmit={onSubmit} class="flex gap-2">
-    <input
-      bind:value={question}
-      type="text"
-      placeholder="e.g. Who has the most wins at Monaco?"
-      maxlength={500}
-      autocomplete="off"
-      disabled={loading}
-      class="flex-1 h-12 rounded-md border border-input bg-background px-4 text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-    />
-    <Button type="submit" size="lg" disabled={loading || !question.trim()}>
-      {#if loading}
-        <Spinner size={16} />
-      {/if}
-      Ask
-    </Button>
-  </form>
+    <form onsubmit={onSubmit} class="flex gap-2">
+      <input
+        bind:value={question}
+        type="text"
+        placeholder="e.g. Who has the most wins at Monaco?"
+        maxlength={500}
+        autocomplete="off"
+        disabled={loading}
+        class="flex-1 h-12 rounded-full px-5 text-base placeholder:text-[color:var(--sp-grape-300)] focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50"
+        style="background: var(--sp-grape-800); border: 1px solid var(--sp-grape-600); color: var(--sp-sand-100); --tw-ring-color: var(--sp-rose-500)"
+      />
+      <Button variant="accent" type="submit" size="lg" disabled={loading || !question.trim()}>
+        {#if loading}
+          <Spinner size={16} />
+        {/if}
+        Ask
+      </Button>
+    </form>
 
-  {#if !result && !loading && !error}
-    <div class="space-y-3">
-      <p class="text-sm text-muted-foreground text-center">Try one of these:</p>
-      <div class="flex flex-wrap justify-center gap-2">
+    {#if !result && !loading && !error}
+      <div class="flex flex-wrap gap-2 pt-1">
         {#each examples as ex (ex)}
           <button
             type="button"
             onclick={() => tryExample(ex)}
-            class="text-sm rounded-full border border-input px-4 py-1.5 hover:border-accent hover:bg-accent/10 transition-colors"
+            class="text-[12.5px] font-bold rounded-full px-4 py-2 transition-colors"
+            style="background: var(--sp-grape-600); color: var(--sp-grape-200)"
           >
             {ex}
           </button>
         {/each}
       </div>
-    </div>
-  {/if}
+    {/if}
+  </div>
 
   {#if error}
     <Alert variant="destructive">{error}</Alert>

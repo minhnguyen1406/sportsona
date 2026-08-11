@@ -32,14 +32,16 @@
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden={variant === 'wordmark'}
     aria-label={variant === 'mark' ? 'Sportsona' : undefined}
-    class="shrink-0 text-primary dark:text-foreground"
+    class="shrink-0"
   >
+    <!-- Bars inherit currentColor (set by the parent surface: Grape on light,
+         Sand on the grape header / dark). Head is always rose. -->
     <g fill="currentColor">
       <rect x="13" y="39" width="9" height="14" rx="4.5" />
       <rect x="27" y="30" width="9" height="23" rx="4.5" />
       <rect x="41" y="25" width="9" height="28" rx="4.5" />
     </g>
-    <circle cx="45.5" cy="14" r="6" class="fill-accent" />
+    <circle cx="45.5" cy="14" r="6" style="fill: var(--sp-rose-500)" />
   </svg>
 {/snippet}
 
@@ -51,10 +53,10 @@
   <span class={cn('inline-flex items-center gap-2', className)} aria-label="Sportsona">
     {@render markSvg()}
     <span
-      class="font-extrabold text-foreground"
+      class="font-extrabold"
       style:font-size="{wordmarkFontSize}px"
       style:line-height="1"
       style:letter-spacing="-0.028em"
-    >Sportsona<span class="text-rose-ink">.</span></span>
+    >Sportsona<span style="color: var(--sp-rose-500)">.</span></span>
   </span>
 {/if}
