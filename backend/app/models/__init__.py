@@ -3,6 +3,7 @@ from app.users.models import User
 from app.auth.models import OneTimeToken, RevokedRefreshToken
 from app.features.ask.answer import AskAnswer
 from app.features.ask.cache import AskCache
+from app.features.comments.models import Comment
 from app.features.recap.models import RaceRecap
 from app.features.stat_of_day.models import StatOfDay
 from app.sports.f1.models import (
@@ -26,6 +27,7 @@ __all__ = [
     "RevokedRefreshToken",
     "AskAnswer",
     "AskCache",
+    "Comment",
     "RaceRecap",
     "StatOfDay",
     "F1_SCHEMA",

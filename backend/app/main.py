@@ -6,6 +6,7 @@ from slowapi.errors import RateLimitExceeded
 from app.auth.rate_limit import limiter
 from app.core.config import settings
 from app.features.ask.router import router as ask_router
+from app.features.comments.router import router as comments_router
 from app.auth.router import router as auth_router
 from app.sports.f1.routers import f1_router
 from app.features.recap.router import router as recap_router
@@ -57,6 +58,7 @@ app.include_router(f1_router)
 app.include_router(ask_router)
 app.include_router(stat_of_day_router)
 app.include_router(recap_router)
+app.include_router(comments_router)
 
 @app.get("/")
 def root():

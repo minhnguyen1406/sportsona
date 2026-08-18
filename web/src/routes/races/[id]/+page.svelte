@@ -5,6 +5,7 @@
   import Badge from '$lib/components/ui/Badge.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import RecapCard from '$lib/components/RecapCard.svelte';
+  import CommentThread from '$lib/components/CommentThread.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import {
     ApiError,
@@ -171,5 +172,7 @@
         </Card>
       </section>
     {/if}
+
+    <CommentThread raceId={race.id} />
   {/if}
 </div>

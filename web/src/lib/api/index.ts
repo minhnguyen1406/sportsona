@@ -15,3 +15,4 @@ export * from './users';
 export * from './ask';
 export * from './recap';
 export * from './stat';
+export * from './comments';
