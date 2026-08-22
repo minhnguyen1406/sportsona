@@ -129,7 +129,7 @@
     --secondary: 267 46% 24%;          /* Grape 600 */
     --secondary-foreground: 42 41% 92%;
     --muted: 267 46% 24%;
-    --muted-foreground: 266 34% 63%;   /* Grape 300 — 4.9:1, min 13px */
+    --muted-foreground: 266 34% 80%;   /* Grape 200 — 9.2:1. Guide v3: the safe small-text colour on dark (eyebrows, captions, table labels); Grape 300 only passes at ≥13px */
 
     --accent: 347 78% 73%;             /* Rose 400 — lifted for dark surfaces */
     --accent-foreground: 340 65% 14%;
@@ -178,7 +178,12 @@
     --sp-rose-400: #f0839b;
     --sp-rose-100: #fce4ea;
     --sp-sand-100: #f3eee2;
+    --sp-sand-500: #8a7a60;  /* swatch/icon fills only — never text (3.6:1) */
     --sp-sand-600: #5f5443;
+    --sp-teal-500: #16b8a3;
+    --sp-teal-300: #7fdacd;
+    --sp-volt-500: #c8e63c;
+    --sp-warning: #e39a0b;
     --sp-on-rose: #3a0c1c; /* dark ink for text on a rose fill */
 
     /* Radii — v3 is rounder. r-lg (cards) 20px, r-md 14px, pill. */

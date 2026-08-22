@@ -9,7 +9,7 @@ is the source of truth.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -20,6 +20,7 @@ from app.common.algorithms.bloom_filter import BloomFilter
 from app.common.algorithms.lru_cache import LRUCache
 from app.features.ask.cache import AskCache
 from app.features.ask.llm import AskClient, SqlGeneration, get_ask_client
+from app.features.ask.provenance import ProvenanceItem, provenance_for
 from app.common.sql_safety import (
     SqlSafetyError,
     execute_read_only,
@@ -84,6 +85,7 @@ class AskResult:
     db_latency_ms: int
     cache_read_tokens: int
     cached: bool = False
+    provenance: list[ProvenanceItem] = field(default_factory=list)
 
 
 def _from_cache(db: Session, normalized: str) -> AskCache | None:
@@ -139,7 +141,8 @@ def answer_question(
     hot = _hot.get(normalized)
     if hot is not None:
         return AskResult(**{**hot.__dict__, "question": question.strip(), "cached": True,
-                            "llm_latency_ms": 0, "db_latency_ms": 0, "cache_read_tokens": 0})
+                            "llm_latency_ms": 0, "db_latency_ms": 0, "cache_read_tokens": 0,
+                            "provenance": provenance_for(db, hot.sql, question)})
 
     # Layer 2: Bloom gate — a definite "never seen" skips the DB round-trip.
     hit = _from_cache(db, normalized) if _bloom(db).might_contain(normalized) else None
@@ -159,6 +162,7 @@ def answer_question(
             db_latency_ms=0,
             cache_read_tokens=0,
             cached=True,
+            provenance=provenance_for(db, hit.sql, question),
         ))
         return _hot.get(normalized)
 
@@ -188,6 +192,7 @@ def answer_question(
         db_latency_ms=db_latency_ms,
         cache_read_tokens=gen.cache_read_tokens,
         cached=False,
+        provenance=provenance_for(db, sql, question),
     )
     _store_cache(db, normalized, result)
     _bloom(db).add(normalized)

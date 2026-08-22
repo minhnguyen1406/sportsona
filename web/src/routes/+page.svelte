@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
+  import Landing from '$lib/components/Landing.svelte';
   import { auth } from '$lib/stores/auth.svelte';
   import { authApi, ApiError } from '$lib/api';
 
@@ -21,6 +22,9 @@
   });
 </script>
 
+{#if !auth.isAuthenticated}
+  <Landing />
+{:else}
 <div class="max-w-3xl mx-auto space-y-8">
   <section class="space-y-4 py-8">
     <h1 class="text-4xl font-extrabold tracking-tight" style:letter-spacing="-0.032em">
@@ -67,3 +71,4 @@
     </Card>
   </section>
 </div>
+{/if}

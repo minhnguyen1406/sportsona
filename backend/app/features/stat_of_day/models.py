@@ -20,6 +20,8 @@ class StatOfDay(Base):
     columns = Column(_JSON, nullable=False)
     rows = Column(_JSON, nullable=False)
     narration = Column(String, nullable=False)
+    # 2–3 evidence bullets behind the headline ("a number never travels alone").
+    reasons = Column(_JSON, nullable=True)
     model = Column(String, nullable=False)
     created_at = Column(
         DateTime(timezone=False),

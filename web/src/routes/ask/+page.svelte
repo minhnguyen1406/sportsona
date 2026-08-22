@@ -4,6 +4,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import ResultsTable from '$lib/components/ResultsTable.svelte';
+  import ProvenanceList from '$lib/components/ProvenanceList.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import { ApiError, type AskHistoryItem, type AskResponse, askApi } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
@@ -139,7 +140,10 @@
     </form>
 
     {#if !result && !loading && !error}
-      <div class="flex flex-wrap gap-2 pt-1">
+      <p class="text-[12.5px] pt-1" style="color: var(--sp-grape-200)">
+        Every answer shows where it came from. We won't predict who's going to win — nobody can.
+      </p>
+      <div class="flex flex-wrap gap-2">
         {#each examples as ex (ex)}
           <button
             type="button"
@@ -190,6 +194,8 @@
             : undefined}
         />
       {/if}
+
+      <ProvenanceList items={result.provenance ?? []} />
 
       <details class="text-sm">
         <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">

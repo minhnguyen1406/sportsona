@@ -13,6 +13,7 @@ class StatOfDayResponse(BaseModel):
     columns: list[str]
     rows: list[list[Any]]
     narration: str
+    reasons: list[str] | None = None
     model: str
     created_at: datetime
 

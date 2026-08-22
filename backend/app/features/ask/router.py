@@ -12,7 +12,8 @@ from app.auth.dependencies import get_current_active_user, get_optional_user
 from app.auth.rate_limit import limiter
 from app.core.database import get_db
 from app.models import AskAnswer, User
-from app.features.ask.schemas import AskAnswerResponse, AskHistoryItem, AskRequest, AskResponse
+from app.features.ask.provenance import provenance_for
+from app.features.ask.schemas import AskAnswerResponse, AskHistoryItem, AskRequest, AskResponse, ProvenanceOut
 from app.common.errors import RATE_LIMITED, UNAUTHORIZED
 from app.features.ask.service import AskFailure, answer_question
 
@@ -165,6 +166,7 @@ def ask(
         db_latency_ms=result.db_latency_ms,
         cache_read_tokens=result.cache_read_tokens,
         cached=result.cached,
+        provenance=[ProvenanceOut(**p._asdict()) for p in result.provenance],
         answer_id=answer_id,
     )
 
@@ -193,10 +195,13 @@ def ask_history(
     response_model=AskAnswerResponse,
     responses={404: {"description": "No answer with that link"}},
 )
-def get_answer(slug: str, db: Session = Depends(get_db)) -> AskAnswer:
+def get_answer(slug: str, db: Session = Depends(get_db)) -> AskAnswerResponse:
     """Fetch a stored answer snapshot by its share slug. Public — the slug
     itself is the unguessable capability."""
     answer = db.query(AskAnswer).filter(AskAnswer.slug == slug).first()
     if answer is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Answer not found")
-    return answer
+    # Provenance is derived from the stored SQL, so old snapshots get it too.
+    out = AskAnswerResponse.model_validate(answer, from_attributes=True)
+    out.provenance = [ProvenanceOut(**p._asdict()) for p in provenance_for(db, answer.sql, answer.question)]
+    return out

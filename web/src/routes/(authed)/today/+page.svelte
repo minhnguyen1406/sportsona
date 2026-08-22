@@ -87,6 +87,16 @@
       <p class="text-[15px] leading-relaxed" style="color: var(--sp-grape-200)">
         {stat.narration}
       </p>
+      {#if stat.reasons && stat.reasons.length > 0}
+        <!-- "A number never travels alone": the evidence behind the headline. -->
+        <div class="flex flex-col gap-2 pt-2">
+          {#each stat.reasons as r, i (i)}
+            <div class="grid grid-cols-[16px_1fr] gap-3 text-[14px] leading-snug" style="color: var(--sp-grape-200)">
+              <span class="font-black" style="color: var(--sp-volt-500)">↑</span><span>{r}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
 
     {#if stat.rows.length > 0 || stat.sql}

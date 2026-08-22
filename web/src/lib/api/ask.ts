@@ -2,6 +2,12 @@
 
 import { apiFetch } from './client';
 
+export interface Provenance {
+  state: 'confirmed' | 'derived' | 'unavailable';
+  label: string;
+  source: string;
+}
+
 export interface AskResponse {
   question: string;
   sql: string;
@@ -16,6 +22,7 @@ export interface AskResponse {
   cache_read_tokens: number;
   cached: boolean;
   answer_id: string | null;
+  provenance: Provenance[];
 }
 
 export interface AskAnswerResponse {
@@ -28,6 +35,7 @@ export interface AskAnswerResponse {
   truncated: boolean;
   model: string;
   created_at: string;
+  provenance: Provenance[];
 }
 
 export interface AskHistoryItem {

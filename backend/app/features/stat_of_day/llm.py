@@ -33,6 +33,7 @@ class PickerResult:
 @dataclass
 class NarratorResult:
     narration: str
+    reasons: list[str]
     model: str
     input_tokens: int
     output_tokens: int
@@ -127,10 +128,18 @@ def narrate(
     )
     latency_ms = int((time.perf_counter() - start) * 1000)
     text_out = "\n".join(b.text for b in response.content if b.type == "text").strip()
+    try:
+        parsed = _extract_json(text_out)
+        narration = str(parsed.get("narration", "")).strip()
+        reasons = [str(r).strip() for r in parsed.get("reasons", []) if str(r).strip()][:3]
+    except (json.JSONDecodeError, AttributeError):
+        # Old-style plain-text caption — still usable, just without reasons.
+        narration, reasons = text_out, []
 
     usage = response.usage
     return NarratorResult(
-        narration=text_out,
+        narration=narration,
+        reasons=reasons,
         model=response.model,
         input_tokens=usage.input_tokens,
         output_tokens=usage.output_tokens,

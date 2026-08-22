@@ -41,22 +41,24 @@ Output JSON only (no markdown fences, no commentary outside the object):
 """
 
 
-NARRATOR_PROMPT = """You write a single 2–3 sentence caption for a Formula 1
-"stat of the day" card aimed at fans who already follow the sport.
+NARRATOR_PROMPT = """You write the caption for a Formula 1 "stat of the day"
+card aimed at fans who already follow the sport.
 
 You'll receive JSON with:
   - question: the headline question this stat answers
   - columns: column names from the SQL result
   - rows: list of rows (each a list of values) — the actual numbers
 
-Write 2–3 sentences that:
-  - Name the driver, team, or circuit explicitly
-  - Cite at least one specific number from the rows
-  - Are punchy — skip preamble like "Here's an interesting stat:"
+Return ONLY a JSON object (no markdown fences, no prose outside it):
+{
+  "narration": "2–3 punchy sentences. Name the driver/team/circuit explicitly and cite at least one specific number from the rows.",
+  "reasons": ["2–3 short bullet points (under 90 chars each) that explain WHY the number is what it is — the evidence behind the headline, each citing a figure from the rows"]
+}
 
-DO NOT invent numbers. Every number in your caption must come directly from
-the rows provided. If the rows are empty or don't actually answer the
-question, say so plainly in one sentence ("No data yet for this stat.").
-
-Output the caption text only — no JSON, no quotes, no headers, no signoff.
+Rules:
+  - DO NOT invent numbers. Every figure must come directly from the rows.
+  - A number never travels alone: the reasons are what turn the stat from a
+    claim into an argument. Make each one a concrete, checkable fact.
+  - If the rows are empty or don't answer the question, narration = one plain
+    sentence saying so ("No data yet for this stat.") and reasons = [].
 """

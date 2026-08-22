@@ -55,6 +55,7 @@ def get_or_generate(db: Session, today: date) -> StatOfDay:
         columns=columns,
         rows=rows,
         narration=narrator.narration,
+        reasons=narrator.reasons,
         model=narrator.model,
     )
     db.add(stat)

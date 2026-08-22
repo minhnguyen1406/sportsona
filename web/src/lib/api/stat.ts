@@ -9,6 +9,7 @@ export interface StatOfDayResponse {
   columns: string[];
   rows: unknown[][];
   narration: string;
+  reasons: string[] | null;
   model: string;
   created_at: string;
 }

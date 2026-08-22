@@ -2,6 +2,7 @@
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import ResultsTable from '$lib/components/ResultsTable.svelte';
+  import ProvenanceList from '$lib/components/ProvenanceList.svelte';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -56,7 +57,9 @@
       />
     {/if}
 
-    <details class="text-sm">
+    <ProvenanceList items={answer.provenance ?? []} />
+
+      <details class="text-sm">
       <summary class="cursor-pointer text-muted-foreground hover:text-foreground select-none">
         Show the SQL Claude wrote
       </summary>
