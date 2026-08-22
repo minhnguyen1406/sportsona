@@ -18,6 +18,8 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.common.algorithms.brackets import check_balanced
+
 
 # Tokens that have no business in a read-only stats query. We match on
 # whole words so legitimate identifiers like "creation_date" aren't
@@ -63,6 +65,13 @@ def validate_select(sql: str) -> str:
         raise SqlValidationError(
             f"Only SELECT/WITH queries are allowed (got {head!r}).", sql=sql
         )
+
+    # Stack-based bracket/quote balance (Valid Parentheses #20). Catches a
+    # dangling "(" or an unterminated string with a precise message before
+    # Postgres returns an opaque syntax error.
+    problem = check_balanced(cleaned)
+    if problem:
+        raise SqlValidationError(f"Malformed SQL: {problem}.", sql=sql)
 
     match = _FORBIDDEN_RE.search(cleaned)
     if match:

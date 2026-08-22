@@ -18,3 +18,4 @@ export * from './stat';
 export * from './comments';
 export * from './search';
 export * from './connections';
+export * from './stats';

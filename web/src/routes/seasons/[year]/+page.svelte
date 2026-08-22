@@ -4,6 +4,7 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
+  import TitleMathCard from '$lib/components/TitleMathCard.svelte';
   import {
     ApiError,
     type ConstructorStandingResponse,
@@ -125,6 +126,7 @@
         </Card>
       {/if}
     {:else if tab === 'drivers'}
+      <div class="mb-4"><TitleMathCard year={Number(year)} /></div>
       {#if driverStandings.length === 0}
         <Card class="p-8 text-center text-muted-foreground">
           No driver standings synced for {year}.

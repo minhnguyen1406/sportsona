@@ -4,6 +4,7 @@
   import Alert from '$lib/components/ui/Alert.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import FollowButton from '$lib/components/FollowButton.svelte';
+  import DriverStatsCard from '$lib/components/DriverStatsCard.svelte';
   import Skeleton from '$lib/components/ui/Skeleton.svelte';
   import { ApiError, type DriverResponse, f1Api } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
@@ -57,5 +58,7 @@
         <FollowButton kind="driver" id={driver.driver_id} />
       </div>
     </Card>
+
+    <DriverStatsCard driverId={driver.driver_id} />
   {/if}
 </div>

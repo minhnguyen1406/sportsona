@@ -16,6 +16,8 @@ from typing import Any
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.common.algorithms.bloom_filter import BloomFilter
+from app.common.algorithms.lru_cache import LRUCache
 from app.features.ask.cache import AskCache
 from app.features.ask.llm import AskClient, SqlGeneration, get_ask_client
 from app.common.sql_safety import (
@@ -31,6 +33,26 @@ MAX_ROWS = 100
 # Answers go stale when new race data syncs in, so cache entries expire by
 # age rather than living forever.
 CACHE_TTL = timedelta(hours=24)
+
+# Two in-process layers in front of the DB cache table:
+#   1. A Bloom filter of every normalised question stored this process
+#      lifetime. If it says "never seen", skip the DB lookup entirely —
+#      no false negatives, so we never miss a real hit. (Seeded lazily from
+#      the table on first use so a restart doesn't lose the gate.)
+#   2. An LRU cache (hash map + doubly linked list, #146) of the hottest
+#      answers, so repeat questions don't even touch the database.
+_HOT_CAPACITY = 256
+_hot: LRUCache[str, "AskResult"] = LRUCache(_HOT_CAPACITY)
+_seen: BloomFilter | None = None
+
+
+def _bloom(db: Session) -> BloomFilter:
+    global _seen
+    if _seen is None:
+        _seen = BloomFilter(expected_items=10_000, false_positive_rate=0.01)
+        for (q,) in db.query(AskCache.question_normalized):
+            _seen.add(q)
+    return _seen
 
 
 def _normalize_question(q: str) -> str:
@@ -113,11 +135,18 @@ def answer_question(
 
     normalized = _normalize_question(question)
 
-    hit = _from_cache(db, normalized)
+    # Layer 1: hot in-memory LRU — O(1), no DB.
+    hot = _hot.get(normalized)
+    if hot is not None:
+        return AskResult(**{**hot.__dict__, "question": question.strip(), "cached": True,
+                            "llm_latency_ms": 0, "db_latency_ms": 0, "cache_read_tokens": 0})
+
+    # Layer 2: Bloom gate — a definite "never seen" skips the DB round-trip.
+    hit = _from_cache(db, normalized) if _bloom(db).might_contain(normalized) else None
     if hit is not None:
         hit.hit_count += 1
         db.commit()
-        return AskResult(
+        _hot.put(normalized, AskResult(
             question=question.strip(),
             sql=hit.sql,
             reasoning=hit.reasoning,
@@ -130,7 +159,8 @@ def answer_question(
             db_latency_ms=0,
             cache_read_tokens=0,
             cached=True,
-        )
+        ))
+        return _hot.get(normalized)
 
     llm = client or get_ask_client()
     gen: SqlGeneration = llm.generate_sql(question.strip())
@@ -160,4 +190,6 @@ def answer_question(
         cached=False,
     )
     _store_cache(db, normalized, result)
+    _bloom(db).add(normalized)
+    _hot.put(normalized, result)
     return result
