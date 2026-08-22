@@ -109,7 +109,7 @@
         {:else}
           <a
             href="/login"
-            class="hidden md:inline text-sm font-bold text-[var(--sp-grape-200)] hover:text-[var(--sp-sand-100)]"
+            class="hidden md:inline whitespace-nowrap text-sm font-bold text-[var(--sp-grape-200)] hover:text-[var(--sp-sand-100)]"
           >
             Sign in
           </a>
