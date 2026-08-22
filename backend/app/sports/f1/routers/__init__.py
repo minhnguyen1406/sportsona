@@ -5,6 +5,7 @@ from app.sports.f1.routers.drivers import router as drivers_router
 from app.sports.f1.routers.constructors import router as constructors_router
 from app.sports.f1.routers.races import router as races_router
 from app.sports.f1.routers.circuits import router as circuits_router
+from app.sports.f1.routers.admin import router as admin_router
 
 f1_router = APIRouter(prefix="/api/v1/f1", tags=["F1"])
 
@@ -13,3 +14,4 @@ f1_router.include_router(drivers_router)
 f1_router.include_router(constructors_router)
 f1_router.include_router(races_router)
 f1_router.include_router(circuits_router)
+f1_router.include_router(admin_router)

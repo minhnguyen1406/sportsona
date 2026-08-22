@@ -16,3 +16,5 @@ export * from './ask';
 export * from './recap';
 export * from './stat';
 export * from './comments';
+export * from './search';
+export * from './connections';

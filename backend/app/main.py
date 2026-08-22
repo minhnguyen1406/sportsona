@@ -7,6 +7,8 @@ from app.auth.rate_limit import limiter
 from app.core.config import settings
 from app.features.ask.router import router as ask_router
 from app.features.comments.router import router as comments_router
+from app.features.connections.router import router as connections_router
+from app.features.search.router import router as search_router
 from app.auth.router import router as auth_router
 from app.sports.f1.routers import f1_router
 from app.features.recap.router import router as recap_router
@@ -59,6 +61,8 @@ app.include_router(ask_router)
 app.include_router(stat_of_day_router)
 app.include_router(recap_router)
 app.include_router(comments_router)
+app.include_router(search_router)
+app.include_router(connections_router)
 
 @app.get("/")
 def root():

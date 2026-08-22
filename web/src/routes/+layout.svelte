@@ -2,6 +2,7 @@
   import '../app.css';
   import Logo from '$lib/components/Logo.svelte';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
+  import SearchBox from '$lib/components/SearchBox.svelte';
   import Button from '$lib/components/ui/Button.svelte';
   import { auth } from '$lib/stores/auth.svelte';
   import { authApi } from '$lib/api';
@@ -37,6 +38,7 @@
 
   const navLinks = [
     { href: '/ask', label: 'Ask' },
+    { href: '/connect', label: 'Connect' },
     { href: '/drivers', label: 'Drivers' },
     { href: '/constructors', label: 'Teams' },
     { href: '/seasons', label: 'Seasons' }
@@ -91,6 +93,7 @@
       </div>
 
       <nav class="flex items-center gap-3">
+        <div class="hidden lg:block"><SearchBox variant="header" /></div>
         <ThemeToggle />
         {#if auth.isAuthenticated}
           <button
