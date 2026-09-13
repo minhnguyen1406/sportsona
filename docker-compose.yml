@@ -16,6 +16,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
     networks:
       - sportsona-network
 
@@ -57,6 +58,7 @@ services:
       sportsona-db:
         condition: service_healthy
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    restart: unless-stopped
     networks:
       - sportsona-network
 
@@ -76,6 +78,10 @@ services:
       FASTF1_CACHE_DIR: /app/cache
       SYNC_HOUR_UTC: ${SYNC_HOUR_UTC:-4}
       SYNC_ON_STARTUP: ${SYNC_ON_STARTUP:-0}
+      # Sync-failure alerts. Empty ALERT_EMAIL = log-only.
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Sportsona <onboarding@resend.dev>}
     volumes:
       - ./backend/app:/app/app:delegated
       - ./backend/scripts:/app/scripts:delegated
