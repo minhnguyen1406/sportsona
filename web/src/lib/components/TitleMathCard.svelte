@@ -21,7 +21,7 @@
     {#if tm.clinched}
       <p class="text-sm"><span class="font-extrabold">{tm.leader.name}</span> has clinched the championship.</p>
     {:else}
-      <p class="text-sm"><span class="sp-fig">{tm.still_alive}</span> drivers can still mathematically win. Max <span class="sp-fig">{tm.max_points_per_round}</span> pts per remaining round.</p>
+      <p class="text-sm"><span class="sp-fig">{tm.still_alive}</span> drivers can still mathematically win. Max <span class="sp-fig">{tm.max_points_per_round}</span> pts per remaining round{#if tm.remaining_sprints > 0}, plus <span class="sp-fig">8</span> per sprint ({tm.remaining_sprints} left){/if}.</p>
       <ul class="divide-y divide-border text-sm">
         {#each tm.drivers.filter((d) => d.alive).slice(0, 6) as d (d.driver_id)}
           <li class="flex items-center gap-3 py-1.5">

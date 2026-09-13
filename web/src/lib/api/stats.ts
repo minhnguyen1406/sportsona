@@ -17,7 +17,7 @@ export interface ProgressionRound { round: number; race: string; points: number;
 export interface Progression { driver_id: string; season: number; total: number; rounds: ProgressionRound[]; }
 
 export interface TitleRow { driver_id: string; name: string; position: number; points: number; max_possible: number; alive: boolean; needs_per_round: number | null; }
-export interface TitleMath { season: number; after_round: number; remaining_rounds: number; max_points_per_round: number; leader: TitleRow | null; clinched: boolean; still_alive: number; drivers: TitleRow[]; }
+export interface TitleMath { season: number; after_round: number; remaining_rounds: number; remaining_sprints: number; max_points_per_round: number; leader: TitleRow | null; clinched: boolean; still_alive: number; drivers: TitleRow[]; }
 
 export const statsApi = {
   form(driverId: string, k = 5): Promise<FormGuide> {

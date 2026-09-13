@@ -2,8 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
 from app.core.database import get_db
-from app.sports.f1.models import Race, RaceResult, QualifyingResult
-from app.sports.f1.schemas import RaceResponse, RaceResultResponse, QualifyingResultResponse
+from app.sports.f1.models import Race, RaceResult, SprintResult, QualifyingResult
+from app.sports.f1.schemas import (
+    RaceResponse,
+    RaceResultResponse,
+    SprintResultResponse,
+    QualifyingResultResponse,
+)
 
 router = APIRouter()
 
@@ -51,6 +56,23 @@ def get_qualifying_results(race_id: int, db: Session = Depends(get_db)):
         .options(joinedload(QualifyingResult.driver), joinedload(QualifyingResult.constructor))
         .filter(QualifyingResult.race_id == race_id)
         .order_by(QualifyingResult.position.asc().nullslast())
+        .all()
+    )
+    return results
+
+
+@router.get("/races/{race_id}/sprint", response_model=list[SprintResultResponse])
+def get_sprint_results(race_id: int, db: Session = Depends(get_db)):
+    """Get sprint results for a race. Empty list for conventional weekends."""
+    race = db.query(Race).filter(Race.id == race_id).first()
+    if not race:
+        raise HTTPException(status_code=404, detail="Race not found")
+
+    results = (
+        db.query(SprintResult)
+        .options(joinedload(SprintResult.driver), joinedload(SprintResult.constructor))
+        .filter(SprintResult.race_id == race_id)
+        .order_by(SprintResult.position.asc().nullslast())
         .all()
     )
     return results

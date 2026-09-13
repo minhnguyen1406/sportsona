@@ -48,6 +48,21 @@ class RaceResultResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class SprintResultResponse(BaseModel):
+    id: int
+    position: Optional[int] = None
+    position_text: Optional[str] = None
+    grid_position: Optional[int] = None
+    points: float
+    laps: Optional[int] = None
+    time: Optional[str] = None
+    status: Optional[str] = None
+    driver: DriverResponse
+    constructor: ConstructorResponse
+
+    model_config = {"from_attributes": True}
+
+
 class QualifyingResultResponse(BaseModel):
     id: int
     position: Optional[int] = None

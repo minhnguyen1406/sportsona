@@ -53,6 +53,19 @@ export interface RaceResultResponse {
   constructor: ConstructorResponse;
 }
 
+export interface SprintResultResponse {
+  id: number;
+  position: number | null;
+  position_text: string | null;
+  grid_position: number | null;
+  points: number;
+  laps: number | null;
+  time: string | null;
+  status: string | null;
+  driver: DriverResponse;
+  constructor: ConstructorResponse;
+}
+
 export interface QualifyingResultResponse {
   id: number;
   position: number | null;
@@ -135,5 +148,8 @@ export const f1Api = {
   },
   getQualifyingResults(id: number): Promise<QualifyingResultResponse[]> {
     return apiFetch(`/api/v1/f1/races/${id}/qualifying`);
+  },
+  getSprintResults(id: number): Promise<SprintResultResponse[]> {
+    return apiFetch(`/api/v1/f1/races/${id}/sprint`);
   }
 };

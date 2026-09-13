@@ -12,6 +12,7 @@ from app.models import (
     Circuit,
     Race,
     RaceResult,
+    SprintResult,
     QualifyingResult,
     DriverStanding,
     ConstructorStanding,
@@ -251,9 +252,12 @@ class F1DataService:
 
             circuit_id = event['Location'].lower().replace(' ', '_').replace('-', '_')
 
+            # FastF1's schedule has no circuit name — use the location
+            # ("Zandvoort"), never OfficialEventName, which is the sponsored
+            # event title ("FORMULA 1 HEINEKEN DUTCH GRAND PRIX 2024").
             self._ensure_circuit_exists(
                 circuit_id=circuit_id,
-                name=event['OfficialEventName'] if 'OfficialEventName' in event else event['EventName'],
+                name=event['Location'],
                 country=event['Country'] if 'Country' in event else None
             )
 
@@ -275,6 +279,7 @@ class F1DataService:
                 self.db.add(race)
                 existing_races[round_number] = race
 
+            race.format = event['EventFormat']
             races.append(race)
 
         self.db.flush()
@@ -625,6 +630,71 @@ class F1DataService:
             for field, value in values.items():
                 setattr(quali, field, value)
         return quali
+
+    # ── sprint results ────────────────────────────────────────────────────
+
+    def sync_sprint_results(self, year: int, round_number: int) -> list[SprintResult]:
+        """Sync sprint results for a sprint-weekend race. Returns [] for
+        conventional weekends (sprints only exist 2021+, all modern era)."""
+        race = self._get_race_or_raise(year, round_number)
+        if not (race.format or "").startswith("sprint"):
+            return []
+
+        session = fastf1.get_session(year, round_number, 'S')
+        session.load(laps=False, telemetry=False, weather=False, messages=False)
+
+        existing = self._existing_sprint_results(race.id)
+        results: list[SprintResult] = []
+        seen: set[str] = set()
+
+        for _, result in session.results.iterrows():
+            driver_id = self._resolve_driver_id(
+                "", result['FirstName'], result['LastName']
+            )
+            if driver_id in seen:
+                continue
+            seen.add(driver_id)
+
+            constructor_id = self._resolve_constructor_id("", result['TeamName'])
+            position = result['Position']
+            grid = result['GridPosition'] if 'GridPosition' in result else None
+
+            results.append(self._upsert_sprint_result(race.id, driver_id, {
+                'constructor_id': constructor_id,
+                'grid_position': int(grid) if grid and not pd.isna(grid) else None,
+                'position': int(position) if position and not pd.isna(position) else None,
+                'position_text': str(int(position)) if position and not pd.isna(position) else 'R',
+                'points': float(result['Points']) if result['Points'] else 0,
+                'laps': int(result['NumberOfLaps']) if 'NumberOfLaps' in result and result['NumberOfLaps'] else None,
+                'time': str(result['Time']) if pd.notna(result.get('Time')) else None,
+                'status': result['Status'],
+            }, existing))
+
+        self.db.commit()
+        return results
+
+    def _existing_sprint_results(self, race_id: int) -> dict[str, SprintResult]:
+        return {
+            sr.driver_id: sr
+            for sr in self.db.query(SprintResult).filter(SprintResult.race_id == race_id)
+        }
+
+    def _upsert_sprint_result(
+        self,
+        race_id: int,
+        driver_id: str,
+        values: dict,
+        existing: dict[str, SprintResult],
+    ) -> SprintResult:
+        row = existing.get(driver_id)
+        if row is None:
+            row = SprintResult(race_id=race_id, driver_id=driver_id, **values)
+            self.db.add(row)
+            existing[driver_id] = row
+        else:
+            for key, value in values.items():
+                setattr(row, key, value)
+        return row
 
     def sync_qualifying_results(self, year: int, round_number: int) -> list[QualifyingResult]:
         """Sync qualifying results for a specific race weekend."""

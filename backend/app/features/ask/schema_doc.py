@@ -46,6 +46,7 @@ f1.races
   circuit_id (text)  → f1.circuits
   date (date)
   time (time)                            -- UTC start time
+  format (text)                          -- weekend format; 'sprint%' = sprint weekend, NULL/'conventional' = normal
 
 f1.race_results
   id (int, PK)
@@ -61,6 +62,19 @@ f1.race_results
   fastest_lap_time (text)
   fastest_lap_rank (int)                 -- 1 if this driver set the race's fastest lap
   status (text)                          -- 'Finished', '+1 Lap', 'Collision', etc.
+
+f1.sprint_results
+  id (int, PK)
+  race_id (int)  → f1.races
+  driver_id (text)  → f1.drivers
+  constructor_id (text)  → f1.constructors
+  grid_position (int)
+  position (int)                         -- sprint finishing position; NULL if DNF
+  position_text (text)
+  points (double precision)              -- sprint points (8-7-6-5-4-3-2-1 top 8)
+  laps (int)
+  time (text)
+  status (text)
 
 f1.qualifying_results
   id (int, PK)
@@ -83,15 +97,18 @@ f1.constructor_standings
   same shape as driver_standings, with constructor_id instead
 
 Domain conventions and gotchas:
-  - A "win" = f1.race_results.position = 1.
+  - A "win" = f1.race_results.position = 1. Sprint wins are separate:
+    f1.sprint_results.position = 1 — never count them as Grand Prix wins
+    unless the user explicitly asks about sprints.
   - A "pole position" = f1.qualifying_results.position = 1.
   - A "podium" = f1.race_results.position IN (1, 2, 3).
   - DNFs have position IS NULL; inspect position_text/status for cause.
   - "Latest standings" for a season = row with max(round) for that season.
   - Driver lookups by name should be case-insensitive across given_name,
     family_name, or driver_id — users say 'Hamilton' or 'lewis_hamilton'.
-  - Coverage: results are most complete for 2010–2024 plus partial 2025–2026.
-    Older races have schedules but no results yet.
+  - Coverage: race and qualifying results 2010–2026; sprint results 2021+
+    (sprints did not exist before 2021). Older races have schedules but no
+    results yet.
 
 Race lookups — DO NOT guess circuit_id slugs:
   - Circuit ids are inconsistent (Monaco is 'monte_carlo' not 'monaco';

@@ -85,6 +85,21 @@ def test_title_math_alive_and_clinched(db_session, season):
     t = stats.title_math(db_session, 2024)
     assert t["remaining_rounds"] == 2 and t["clinched"] is False
     assert t["drivers"][1]["alive"] is True and t["drivers"][1]["needs_per_round"] == 4.0
+    assert t["remaining_sprints"] == 0
+
+
+def test_title_math_counts_remaining_sprints(db_session, season):
+    # One future conventional round + one future sprint weekend:
+    # max gain = 2×25 + 1×8 = 58.
+    db_session.add_all([
+        Race(id=7, season=2024, round=7, name="R7", circuit_id="c", date=date(2024, 4, 1)),
+        Race(id=8, season=2024, round=8, name="R8", circuit_id="c", date=date(2024, 4, 8), format="sprint_qualifying"),
+    ])
+    db_session.commit()
+    t = stats.title_math(db_session, 2024)
+    assert t["remaining_sprints"] == 1
+    assert t["leader"]["max_possible"] == 130 + 58
+    assert t["drivers"][1]["max_possible"] == 122 + 58
 
 
 def test_fantasy_knapsack_respects_budget_and_size(db_session, season):

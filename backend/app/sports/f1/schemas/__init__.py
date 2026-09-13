@@ -6,6 +6,7 @@ from app.sports.f1.schemas.race import (
     RaceResponse,
     RaceBriefResponse,
     RaceResultResponse,
+    SprintResultResponse,
     QualifyingResultResponse,
 )
 from app.sports.f1.schemas.standings import (
@@ -21,6 +22,7 @@ __all__ = [
     "RaceResponse",
     "RaceBriefResponse",
     "RaceResultResponse",
+    "SprintResultResponse",
     "QualifyingResultResponse",
     "DriverStandingResponse",
     "ConstructorStandingResponse",

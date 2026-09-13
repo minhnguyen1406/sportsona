@@ -152,6 +152,14 @@ def run_sync() -> list[str]:
                 db.rollback()
                 logger.exception("Qualifying R%s (%s) failed", rd, rname)
                 failures.append(f"qualifying R{rd} ({rname}): {exc}")
+            if (race.format or "").startswith("sprint"):
+                try:
+                    sprint = service.sync_sprint_results(year, rd)
+                    logger.info("Sprint R%s (%s): %s rows", rd, rname, len(sprint))
+                except Exception as exc:
+                    db.rollback()
+                    logger.exception("Sprint R%s (%s) failed", rd, rname)
+                    failures.append(f"sprint R{rd} ({rname}): {exc}")
 
         try:
             standings = service.sync_standings(year)

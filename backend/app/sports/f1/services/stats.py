@@ -190,15 +190,16 @@ def active_in(db: Session, year: int) -> dict:
 
 # ── title math (greedy upper bound) ────────────────────────────────────────
 
-MAX_POINTS_PER_ROUND = 25   # a win; sprints (+8) aren't modelled yet, so this is conservative
+MAX_POINTS_PER_ROUND = 25   # a Grand Prix win
+MAX_SPRINT_POINTS = 8       # a sprint win, on sprint weekends
 
 
 def title_math(db: Session, season: int) -> dict:
     """For each driver: the most points they could still reach
-    (current + 25 × remaining rounds). They're alive iff that bound ≥ the
-    leader's current total. The leader has clinched iff nobody else is alive.
-    Same reasoning as Jump Game: compute the furthest reachable bound and
-    compare."""
+    (current + 25 per remaining round, + 8 more per remaining sprint
+    weekend). They're alive iff that bound ≥ the leader's current total.
+    The leader has clinched iff nobody else is alive. Same reasoning as
+    Jump Game: compute the furthest reachable bound and compare."""
     latest = db.query(DriverStanding.round).filter(DriverStanding.season == season).order_by(DriverStanding.round.desc()).first()
     if latest is None:
         raise StatsError(f"No standings for {season}.")
@@ -210,11 +211,17 @@ def title_math(db: Session, season: int) -> dict:
     )
     total_rounds = db.query(Race).filter(Race.season == season).count()
     remaining = max(0, total_rounds - after_round)
+    remaining_sprints = (
+        db.query(Race)
+        .filter(Race.season == season, Race.round > after_round, Race.format.like("sprint%"))
+        .count()
+    )
     leader_pts = standings[0].points if standings else 0.0
+    max_gain = MAX_POINTS_PER_ROUND * remaining + MAX_SPRINT_POINTS * remaining_sprints
 
     rows = []
     for s in standings:
-        max_possible = s.points + MAX_POINTS_PER_ROUND * remaining
+        max_possible = s.points + max_gain
         rows.append({
             "driver_id": s.driver_id, "name": _name(s.driver), "position": s.position,
             "points": s.points, "max_possible": max_possible,
@@ -224,6 +231,7 @@ def title_math(db: Session, season: int) -> dict:
     alive_others = [r for r in rows[1:] if r["alive"]]
     return {
         "season": season, "after_round": after_round, "remaining_rounds": remaining,
+        "remaining_sprints": remaining_sprints,
         "max_points_per_round": MAX_POINTS_PER_ROUND,
         "leader": rows[0] if rows else None,
         "clinched": bool(rows) and not alive_others,

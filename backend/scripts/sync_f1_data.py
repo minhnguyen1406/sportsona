@@ -23,6 +23,7 @@ def main():
     parser.add_argument('--year', type=int, required=True, help='Season year to sync')
     parser.add_argument('--results', action='store_true', help='Also sync race results for completed races')
     parser.add_argument('--qualifying', action='store_true', help='Also sync qualifying results for completed races')
+    parser.add_argument('--sprints', action='store_true', help='Also sync sprint results for completed sprint weekends')
     parser.add_argument('--standings', action='store_true', help='Also sync standings for the season')
     args = parser.parse_args()
 
@@ -74,6 +75,25 @@ def main():
                 try:
                     quali = service.sync_qualifying_results(args.year, rd)
                     print(f"    ✓ Round {rd} ({rname}): {len(quali)} qualifying rows")
+                except Exception as e:
+                    db.rollback()
+                    print(f"    ✗ Round {rd}: {e}")
+
+        # Optionally sync sprint results for completed sprint weekends
+        if args.sprints:
+            print("  Syncing sprints...")
+            from app.models import Race
+            races = db.query(Race).filter(
+                Race.season == args.year,
+                Race.date <= date.today(),
+                Race.format.like('sprint%')
+            ).order_by(Race.round).all()
+
+            for race in races:
+                rd, rname = race.round, race.name
+                try:
+                    sprint = service.sync_sprint_results(args.year, rd)
+                    print(f"    ✓ Round {rd} ({rname}): {len(sprint)} sprint rows")
                 except Exception as e:
                     db.rollback()
                     print(f"    ✗ Round {rd}: {e}")

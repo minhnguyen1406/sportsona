@@ -264,11 +264,12 @@ class TestSyncScheduleModern:
 
         assert db_session.query(Race).one().date == date(2024, 9, 15)
 
-    def test_falls_back_to_event_name_when_official_name_missing(self, service, mock_fastf1, db_session):
-        # Build a DataFrame with NO 'OfficialEventName' column to hit the fallback
+    def test_circuit_named_after_location_not_event_title(self, service, mock_fastf1, db_session):
+        # The sponsored event title must never become the circuit name.
         df = pd.DataFrame([{
             "RoundNumber": 1,
             "EventName": "Italian GP",
+            "OfficialEventName": "FORMULA 1 PIRELLI GRAN PREMIO D'ITALIA 2024",
             "Location": "Monza",
             "Country": "Italy",
             "EventFormat": "conventional",
@@ -279,7 +280,22 @@ class TestSyncScheduleModern:
         service._sync_schedule_modern(2024)
 
         circuit = db_session.query(Circuit).one()
-        assert circuit.name == "Italian GP"
+        assert circuit.name == "Monza"
+
+    def test_records_weekend_format(self, service, mock_fastf1, db_session):
+        df = pd.DataFrame([{
+            "RoundNumber": 1,
+            "EventName": "Chinese GP",
+            "Location": "Shanghai",
+            "Country": "China",
+            "EventFormat": "sprint_qualifying",
+            "EventDate": pd.Timestamp("2024-04-21"),
+        }])
+        mock_fastf1.get_event_schedule.return_value = df
+
+        service._sync_schedule_modern(2024)
+
+        assert db_session.query(Race).one().format == "sprint_qualifying"
 
 
 # ---------------------------------------------------------------------------

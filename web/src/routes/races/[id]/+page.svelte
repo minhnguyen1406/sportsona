@@ -11,6 +11,7 @@
     ApiError,
     type RaceResponse,
     type RaceResultResponse,
+    type SprintResultResponse,
     type QualifyingResultResponse,
     f1Api
   } from '$lib/api';
@@ -19,6 +20,7 @@
 
   let race = $state<RaceResponse | null>(null);
   let results = $state<RaceResultResponse[]>([]);
+  let sprint = $state<SprintResultResponse[]>([]);
   let qualifying = $state<QualifyingResultResponse[]>([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -31,12 +33,14 @@
     Promise.allSettled([
       f1Api.getRace(id),
       f1Api.getRaceResults(id),
+      f1Api.getSprintResults(id),
       f1Api.getQualifyingResults(id)
     ])
-      .then(([raceR, resultsR, qualR]) => {
+      .then(([raceR, resultsR, sprintR, qualR]) => {
         if (raceR.status === 'fulfilled') race = raceR.value;
         else if (raceR.reason instanceof ApiError) error = raceR.reason.detail;
         if (resultsR.status === 'fulfilled') results = resultsR.value;
+        if (sprintR.status === 'fulfilled') sprint = sprintR.value;
         if (qualR.status === 'fulfilled') qualifying = qualR.value;
       })
       .finally(() => (loading = false));
@@ -124,6 +128,57 @@
       <Card class="p-8 text-center text-muted-foreground">
         No race results yet — check back after the race weekend.
       </Card>
+    {/if}
+
+    {#if sprint.length > 0}
+      <section class="space-y-2">
+        <div class="flex items-baseline gap-2">
+          <h2 class="text-lg font-semibold">Sprint</h2>
+          <span class="text-xs text-muted-foreground">Saturday sprint race</span>
+        </div>
+        <Card class="overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-muted/50 text-left text-muted-foreground">
+              <tr>
+                <th class="px-4 py-2 font-medium">Pos</th>
+                <th class="px-4 py-2 font-medium">Driver</th>
+                <th class="px-4 py-2 font-medium hidden md:table-cell">Team</th>
+                <th class="px-4 py-2 font-medium hidden sm:table-cell">Grid</th>
+                <th class="px-4 py-2 font-medium text-right">Points</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+              {#each sprint as r (r.id)}
+                <tr class="hover:bg-muted/30">
+                  <td class="px-4 py-3 sp-fig">
+                    {r.position_text ?? (r.position ?? '—')}
+                  </td>
+                  <td class="px-4 py-3">
+                    <a
+                      href="/drivers/{r.driver.driver_id}"
+                      class="font-medium hover:text-primary"
+                    >
+                      {r.driver.given_name} {r.driver.family_name}
+                    </a>
+                  </td>
+                  <td class="px-4 py-3 hidden md:table-cell text-muted-foreground">
+                    <a
+                      href="/constructors/{r.constructor.constructor_id}"
+                      class="hover:text-foreground"
+                    >
+                      {r.constructor.name}
+                    </a>
+                  </td>
+                  <td class="px-4 py-3 hidden sm:table-cell text-muted-foreground">
+                    {r.grid_position ?? '—'}
+                  </td>
+                  <td class="px-4 py-3 text-right font-medium">{r.points}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </Card>
+      </section>
     {/if}
 
     {#if qualifying.length > 0}
