@@ -29,6 +29,26 @@ class AuthStore {
   refreshToken = $state<string | null>(readStorage(REFRESH_KEY));
   user = $state<UserRead | null>(null);
 
+  constructor() {
+    // Another tab rotating (or clearing) the tokens must reach this tab's
+    // in-memory copy, or we'd later send a revoked refresh token and log
+    // both tabs out.
+    if (browser) {
+      window.addEventListener('storage', (e) => {
+        if (e.key === null || e.key === ACCESS_KEY || e.key === REFRESH_KEY) {
+          this.syncFromStorage();
+        }
+      });
+    }
+  }
+
+  /** Re-read tokens from localStorage (the cross-tab source of truth). */
+  syncFromStorage() {
+    this.accessToken = readStorage(ACCESS_KEY);
+    this.refreshToken = readStorage(REFRESH_KEY);
+    if (this.accessToken === null) this.user = null;
+  }
+
   get isAuthenticated() {
     return this.accessToken !== null;
   }

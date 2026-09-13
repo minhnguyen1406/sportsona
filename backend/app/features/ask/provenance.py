@@ -56,13 +56,19 @@ _UNMODELLED = (
     ("tire", "Tyre/strategy data isn't in the database"),
 )
 
+_COVERAGE_TTL_S = 600  # refresh after sync runs, like search/connections
 _coverage_cache: dict[str, str] | None = None
+_coverage_cached_at: float = 0.0
 
 
 def _coverage(db: Session) -> dict[str, str]:
-    """Season span we actually hold per core table — cached per process."""
-    global _coverage_cache
-    if _coverage_cache is None:
+    """Season span we actually hold per core table — cached with a TTL so a
+    data sync (new season, backfill) shows up without a process restart."""
+    import time
+
+    global _coverage_cache, _coverage_cached_at
+    if _coverage_cache is None or time.monotonic() - _coverage_cached_at > _COVERAGE_TTL_S:
+        _coverage_cache = None
         from sqlalchemy import text
         span = {}
         for table in ("race_results", "qualifying_results", "driver_standings"):
@@ -73,6 +79,7 @@ def _coverage(db: Session) -> dict[str, str]:
             if row and row[0]:
                 span[table] = f"{row[0]}–{row[1]}"
         _coverage_cache = span
+        _coverage_cached_at = time.monotonic()
     return _coverage_cache
 
 

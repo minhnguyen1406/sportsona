@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
@@ -366,7 +366,7 @@ def get_dashboard(
     next_race = (
         db.query(Race)
         .options(joinedload(Race.circuit))
-        .filter(Race.date >= date.today())
+        .filter(Race.date >= datetime.now(timezone.utc).date())
         .order_by(Race.date.asc())
         .first()
     )

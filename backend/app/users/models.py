@@ -30,6 +30,9 @@ class User(Base):
     is_superuser = Column(Boolean, nullable=False, default=False, server_default="false")
     is_verified = Column(Boolean, nullable=False, default=False, server_default="false")
     created_at = Column(DateTime, default=datetime.utcnow)
+    # Set on password reset/change; refresh tokens issued before this moment
+    # are rejected, so a reset invalidates every existing session.
+    password_changed_at = Column(DateTime, nullable=True)
 
     # Relationships
     followed_drivers = relationship("Driver", secondary=user_driver_follows, backref="followers")

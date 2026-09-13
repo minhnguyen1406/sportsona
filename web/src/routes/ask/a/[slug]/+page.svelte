@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { parseUTC } from '$lib/date';
   import Button from '$lib/components/ui/Button.svelte';
   import Card from '$lib/components/ui/Card.svelte';
   import ResultsTable from '$lib/components/ResultsTable.svelte';
@@ -16,7 +17,8 @@
   });
 
   function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString(undefined, {
+    // created_at is naive UTC — parse as UTC or the date shifts a day west of UTC.
+    return parseUTC(iso).toLocaleDateString(undefined, {
       month: 'long',
       day: 'numeric',
       year: 'numeric'

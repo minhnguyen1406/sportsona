@@ -60,15 +60,33 @@ async function tryRefresh(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight;
 
   refreshInFlight = (async () => {
+    // Refresh tokens are single-use (the backend rotates + revokes on every
+    // /refresh), so always work from localStorage — another tab may have
+    // rotated since this tab last looked.
+    const staleToken = auth.refreshToken;
+    auth.syncFromStorage();
+    if (auth.refreshToken && auth.refreshToken !== staleToken) {
+      refreshInFlight = null;
+      return true; // another tab already refreshed — use its tokens
+    }
+    const sentToken = auth.refreshToken;
+    if (!sentToken) {
+      refreshInFlight = null;
+      return false;
+    }
     try {
       const tokens = await rawFetch<TokenResponse>('/api/v1/auth/refresh', {
         method: 'POST',
-        json: { refresh_token: auth.refreshToken },
+        json: { refresh_token: sentToken },
         skipAuth: true
       });
       auth.setTokens(tokens);
       return true;
     } catch {
+      // Only clear if the failed token is still current — if another tab
+      // rotated mid-flight, adopt its tokens instead of wiping them.
+      auth.syncFromStorage();
+      if (auth.refreshToken && auth.refreshToken !== sentToken) return true;
       auth.clear();
       return false;
     } finally {

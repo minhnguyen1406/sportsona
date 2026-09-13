@@ -31,7 +31,11 @@
 
   $effect(() => {
     const year = Number($page.params.year);
-    if (!Number.isFinite(year)) return;
+    if (!Number.isFinite(year)) {
+      error = 'Season not found';
+      loading = false;
+      return;
+    }
     loading = true;
     error = null;
 

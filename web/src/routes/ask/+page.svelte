@@ -8,6 +8,7 @@
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import { ApiError, type AskHistoryItem, type AskResponse, askApi } from '$lib/api';
   import { auth } from '$lib/stores/auth.svelte';
+  import { parseUTC } from '$lib/date';
 
   let question = $state('');
   let loading = $state(false);
@@ -230,7 +231,7 @@
             >
               <span class="truncate">{item.question}</span>
               <span class="text-xs text-muted-foreground shrink-0">
-                {new Date(item.created_at).toLocaleDateString()}
+                {parseUTC(item.created_at).toLocaleDateString()}
               </span>
             </a>
           </li>

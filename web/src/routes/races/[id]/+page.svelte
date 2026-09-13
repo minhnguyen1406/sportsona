@@ -27,7 +27,11 @@
 
   $effect(() => {
     const id = Number($page.params.id);
-    if (!Number.isFinite(id)) return;
+    if (!Number.isFinite(id)) {
+      error = 'Race not found';
+      loading = false;
+      return;
+    }
     loading = true;
     error = null;
     Promise.allSettled([

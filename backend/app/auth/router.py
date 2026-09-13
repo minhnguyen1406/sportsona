@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_active_user
@@ -29,7 +30,7 @@ from app.auth.tokens import (
 )
 from app.core.config import settings
 from app.core.database import get_db
-from app.models import User
+from app.models import User, OneTimeToken
 from app.auth.schemas import (
     ForgotPasswordRequest,
     LogoutRequest,
@@ -83,7 +84,15 @@ def register(request: Request, payload: UserCreate, db: Session = Depends(get_db
         hashed_password=hash_password(payload.password),
     )
     db.add(user)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        # Lost the race against a concurrent identical signup.
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email or username already registered",
+        )
     db.refresh(user)
     return user
 
@@ -164,6 +173,17 @@ def refresh(payload: RefreshRequest, db: Session = Depends(get_db)) -> Token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
         )
+
+    # A password reset invalidates every session that predates it. Tokens
+    # without an ``iat`` claim predate this check and are treated as old.
+    if user.password_changed_at is not None:
+        issued_at = claims.get("iat")
+        if issued_at is None or datetime.fromtimestamp(
+            issued_at, tz=timezone.utc
+        ).replace(tzinfo=None) < user.password_changed_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token"
+            )
 
     # Revoke the OLD refresh-token jti before issuing a new pair so the
     # caller cannot reuse the previous token.
@@ -331,4 +351,12 @@ def reset_password(
         )
 
     record.user.hashed_password = hash_password(payload.new_password)
+    record.user.password_changed_at = datetime.utcnow()
+    # Burn any other outstanding reset tokens — only the link that was used
+    # should work, not every email ever sent.
+    db.query(OneTimeToken).filter(
+        OneTimeToken.user_id == record.user_id,
+        OneTimeToken.purpose == PURPOSE_PASSWORD_RESET,
+        OneTimeToken.used_at.is_(None),
+    ).update({"used_at": datetime.utcnow()})
     db.commit()

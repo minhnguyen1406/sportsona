@@ -25,9 +25,11 @@ class FollowStore {
       this.constructors = new Set(constructors.map((c) => c.constructor_id));
       this.hydrated = true;
     } catch (err) {
-      // 401 is expected when logged out — silently leave sets empty
+      // 401 is expected when logged out — silently leave sets empty.
+      // Other failures degrade gracefully (buttons show "Follow") rather
+      // than surfacing as unhandled rejections in fire-and-forget callers.
       if (!(err instanceof ApiError && err.status === 401)) {
-        throw err;
+        console.warn('Failed to load followed drivers/teams', err);
       }
     }
   }

@@ -5,6 +5,7 @@
   import ResultsTable from '$lib/components/ResultsTable.svelte';
   import Spinner from '$lib/components/ui/Spinner.svelte';
   import { ApiError, type StatOfDayResponse, statApi } from '$lib/api';
+  import { formatFullDate, parseUTC } from '$lib/date';
 
   let stat = $state<StatOfDayResponse | null>(null);
   let loading = $state(true);
@@ -25,15 +26,7 @@
     return `Request failed (${err.status}).`;
   }
 
-  function formatDate(iso: string): string {
-    const d = new Date(iso);
-    return d.toLocaleDateString(undefined, {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  }
+
 
   onMount(async () => {
     try {
@@ -53,7 +46,7 @@
 <div class="space-y-8 max-w-4xl mx-auto">
   <header class="text-center space-y-2">
     <p class="text-xs uppercase tracking-widest text-muted-foreground">
-      {#if stat}{formatDate(stat.date)}{:else}Today{/if}
+      {#if stat}{formatFullDate(stat.date)}{:else}Today{/if}
     </p>
     <h1 class="text-3xl font-black tracking-tight">
       Stat of the day<span class="text-rose-ink">.</span>
@@ -114,7 +107,7 @@
         </details>
 
         <p class="text-xs text-muted-foreground border-t pt-3">
-          {stat.model} · generated {new Date(stat.created_at).toLocaleString()}
+          {stat.model} · generated {parseUTC(stat.created_at).toLocaleString()}
         </p>
       </Card>
     {/if}

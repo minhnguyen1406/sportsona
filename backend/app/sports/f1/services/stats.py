@@ -292,6 +292,8 @@ def lap_rank(db: Session, race_id: int, time_text: str) -> dict:
         times = [parse_lap_time(t) for t in (q.q3_time, q.q2_time, q.q1_time) if t]
         if times:
             best.append(min(times))
+    if not best:
+        raise StatsError("No timed qualifying laps for this race.")
     best.sort()
     t = parse_lap_time(time_text)
     rank, pct = binary_search.rank_of(best, t)

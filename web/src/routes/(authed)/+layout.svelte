@@ -12,6 +12,14 @@
 
   let checking = $state(true);
 
+  // If the session dies mid-visit (failed refresh, logout in another tab),
+  // leave the authed area instead of stranding the user on a broken page.
+  $effect(() => {
+    if (!checking && !auth.isAuthenticated) {
+      goto('/login');
+    }
+  });
+
   onMount(async () => {
     if (!auth.isAuthenticated) {
       await goto('/login');

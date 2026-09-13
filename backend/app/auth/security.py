@@ -45,6 +45,7 @@ def _create_token(
     # issued in the same second (e.g. during a refresh rotation) differ.
     payload: dict[str, Any] = {
         "sub": str(subject),
+        "iat": datetime.now(timezone.utc),
         "exp": expire,
         "type": token_type,
         "jti": uuid4().hex,

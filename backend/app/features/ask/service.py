@@ -42,9 +42,26 @@ CACHE_TTL = timedelta(hours=24)
 #      the table on first use so a restart doesn't lose the gate.)
 #   2. An LRU cache (hash map + doubly linked list, #146) of the hottest
 #      answers, so repeat questions don't even touch the database.
+# Hot entries carry their store time so this layer expires on the same
+# TTL as the DB cache — otherwise a worker would serve pre-sync answers
+# for its whole lifetime.
 _HOT_CAPACITY = 256
-_hot: LRUCache[str, "AskResult"] = LRUCache(_HOT_CAPACITY)
+_hot: LRUCache[str, "tuple[datetime, AskResult]"] = LRUCache(_HOT_CAPACITY)
 _seen: BloomFilter | None = None
+
+
+def _hot_get(normalized: str) -> "AskResult | None":
+    entry = _hot.get(normalized)
+    if entry is None:
+        return None
+    stored_at, result = entry
+    if datetime.utcnow() - stored_at > CACHE_TTL:
+        return None
+    return result
+
+
+def _hot_put(normalized: str, result: "AskResult") -> None:
+    _hot.put(normalized, (datetime.utcnow(), result))
 
 
 def _bloom(db: Session) -> BloomFilter:
@@ -109,6 +126,7 @@ def _store_cache(db: Session, normalized: str, result: AskResult) -> None:
     is fine — the answer already exists."""
     entry = AskCache(
         question_normalized=normalized,
+        created_at=datetime.utcnow(),
         question=result.question,
         sql=result.sql,
         reasoning=result.reasoning,
@@ -138,7 +156,7 @@ def answer_question(
     normalized = _normalize_question(question)
 
     # Layer 1: hot in-memory LRU — O(1), no DB.
-    hot = _hot.get(normalized)
+    hot = _hot_get(normalized)
     if hot is not None:
         return AskResult(**{**hot.__dict__, "question": question.strip(), "cached": True,
                             "llm_latency_ms": 0, "db_latency_ms": 0, "cache_read_tokens": 0,
@@ -149,7 +167,7 @@ def answer_question(
     if hit is not None:
         hit.hit_count += 1
         db.commit()
-        _hot.put(normalized, AskResult(
+        _hot_put(normalized, AskResult(
             question=question.strip(),
             sql=hit.sql,
             reasoning=hit.reasoning,
@@ -196,5 +214,5 @@ def answer_question(
     )
     _store_cache(db, normalized, result)
     _bloom(db).add(normalized)
-    _hot.put(normalized, result)
+    _hot_put(normalized, result)
     return result
