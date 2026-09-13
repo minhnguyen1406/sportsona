@@ -16,12 +16,20 @@
   let { children }: Props = $props();
 
   let mobileOpen = $state(false);
+  let accountOpen = $state(false);
 
-  // Close the mobile drawer on every navigation.
+  // Close the mobile drawer and account menu on every navigation.
   $effect(() => {
     void $page.url.pathname;
     mobileOpen = false;
+    accountOpen = false;
   });
+
+  function onAccountFocusOut(event: FocusEvent) {
+    // Close when focus leaves the menu container (click elsewhere, Tab out).
+    const container = event.currentTarget as HTMLElement;
+    if (!container.contains(event.relatedTarget as Node)) accountOpen = false;
+  }
 
   async function handleLogout() {
     if (auth.refreshToken) {
@@ -96,16 +104,46 @@
         <div class="hidden lg:block"><SearchBox variant="header" /></div>
         <ThemeToggle />
         {#if auth.isAuthenticated}
-          <button
-            type="button"
-            onclick={handleLogout}
-            title="Sign out ({auth.user?.username ?? ''})"
-            aria-label="Account — sign out"
-            class="hidden md:grid h-9 w-9 place-items-center rounded-full font-extrabold text-sm"
-            style="background: var(--sp-rose-500); color: var(--sp-on-rose)"
-          >
-            {avatarInitial}
-          </button>
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div class="relative hidden md:block" onfocusout={onAccountFocusOut}>
+            <button
+              type="button"
+              onclick={() => (accountOpen = !accountOpen)}
+              title="Account ({auth.user?.username ?? ''})"
+              aria-label="Account menu"
+              aria-haspopup="menu"
+              aria-expanded={accountOpen}
+              class="grid h-9 w-9 place-items-center rounded-full font-extrabold text-sm"
+              style="background: var(--sp-rose-500); color: var(--sp-on-rose)"
+            >
+              {avatarInitial}
+            </button>
+            {#if accountOpen}
+              <div
+                role="menu"
+                class="absolute right-0 top-11 z-20 w-52 rounded-2xl border border-[var(--sp-grape-600)] py-2 shadow-lg"
+                style="background: var(--sp-grape-800); color: var(--sp-sand-100)"
+              >
+                <p class="px-4 py-1.5 text-xs font-bold text-[var(--sp-grape-200)] truncate">
+                  {auth.user?.username ?? '…'}
+                </p>
+                <a href="/dashboard" role="menuitem" class="block px-4 py-2 text-sm font-bold hover:bg-[var(--sp-grape-600)]">
+                  Dashboard
+                </a>
+                <a href="/today" role="menuitem" class="block px-4 py-2 text-sm font-bold hover:bg-[var(--sp-grape-600)]">
+                  Today's stat
+                </a>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onclick={handleLogout}
+                  class="block w-full px-4 py-2 text-left text-sm font-bold text-[var(--sp-rose-400)] hover:bg-[var(--sp-grape-600)]"
+                >
+                  Sign out
+                </button>
+              </div>
+            {/if}
+          </div>
         {:else}
           <a
             href="/login"
