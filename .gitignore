@@ -48,7 +48,9 @@ SPORTSONA_WEEK1_PLAN.md
 
 # Local tool artifacts
 .playwright-mcp/
-.claude/
+# Claude Code: share project settings, keep per-machine permissions local
+.claude/*
+!.claude/settings.json
 
 # Design-iteration scratch images (root-level only)
 /*.png
