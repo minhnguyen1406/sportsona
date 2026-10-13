@@ -2,7 +2,7 @@
 name = "sportsona-backend"
 version = "0.1.0"
 description = "Sportsona FastAPI Backend"
-authors = ["mnguyen <mnguyen@crmwebsolutions.com>"]
+authors = ["Minh Nguyen <minhnguyen1406@users.noreply.github.com>"]
 readme = "README.md"
 packages = [{include = "app"}]
 

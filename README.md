@@ -1,8 +1,25 @@
 # Sportsona
 
-Personalised, multi-sport companion app. F1-first; more sports coming. The icon
-is **"The Rise"** — three ascending bars with a rose head — on an Electric Grape
-tile (`web/static/favicon.svg`).
+An F1 stats app you can ask questions in plain English. Type "Who has the most wins at
+Monaco?" and Claude writes the SQL; the backend checks it is a single read-only query, runs
+it in a read-only transaction with a timeout, and returns the real rows along with the SQL
+that produced them. F1-first, with the sport code laid out so more sports can slot in.
+
+<!-- Screenshot: save one as assets/screenshot.png, then replace this comment with
+![Sportsona's Ask page answering a question, with the rows and the SQL behind them](assets/screenshot.png) -->
+
+## What it does
+
+- **Ask**: plain-English questions become SQL that runs read-only against real race data.
+  Every answer shows its SQL and gets a shareable link; signed-in users keep a history.
+- **Race recaps**: personalised, cached recaps of each race, written by Claude.
+- **Six degrees of teammates**: the shortest chain of teammates between any two drivers,
+  e.g. Max Verstappen to Juan Manuel Fangio.
+- **Stat of the day**, threaded **race comments**, search autocomplete, and a dashboard for
+  the drivers and constructors you follow.
+- Drivers, constructors, seasons and races to browse, in a light, dark or system theme.
+
+## Stack
 
 ```
 sportsona/
@@ -10,6 +27,9 @@ sportsona/
 ├── web/       SvelteKit 2 + Svelte 5 (runes) + Tailwind v4 + Vite 6
 └── docker-compose.yml
 ```
+
+Claude (Anthropic API) powers Ask, the recaps and the stat of the day. GitHub Actions runs
+the backend tests (pytest, 300+ tests) and the frontend typecheck on every push to master.
 
 ## Quick start
 
@@ -37,47 +57,6 @@ Then open <http://localhost:4000>.
 | Backend (FastAPI)| http://localhost:8000   | `docker compose up -d`     |
 | API docs (Swagger)| http://localhost:8000/docs | (backend)              |
 | Postgres         | localhost:5432          | `docker compose up -d`     |
-
-## Test credentials
-
-⚠️ **Local development only — never use these credentials anywhere else.**
-
-A single pre-seeded user is used by the auth smoke tests, the `try_recap.py`
-script, and ad-hoc browsing.
-
-| Field    | Value                       |
-|----------|-----------------------------|
-| Email    | `smoketest@example.com`     |
-| Username | `smoketester`               |
-| Password | `testpw1234`                |
-
-The user is **not** auto-created on a fresh DB. After a reset, recreate with:
-
-```bash
-curl -s -X POST http://localhost:8000/api/v1/auth/register \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"smoketest@example.com","username":"smoketester","password":"testpw1234"}'
-```
-
-To verify the user exists:
-
-```bash
-docker compose exec sportsona-db psql -U sportsona_user -d sportsona \
-  -c "SELECT id, email, username FROM users WHERE email = 'smoketest@example.com';"
-```
-
-### Database credentials (local)
-
-| Field     | Value              |
-|-----------|--------------------|
-| Host      | localhost          |
-| Port      | 5432               |
-| Database  | sportsona          |
-| User      | sportsona_user     |
-| Password  | dev_password_123   |
-
-Override per-shell with `POSTGRES_USER` / `POSTGRES_PASSWORD` env vars (see
-`docker-compose.yml`).
 
 ## Common tasks
 
@@ -128,11 +107,51 @@ docker compose exec sportsona-backend poetry run pytest -q
 docker compose exec sportsona-backend alembic upgrade head
 ```
 
+## Test credentials
+
+⚠️ **Local development only — never use these credentials anywhere else.**
+
+A single pre-seeded user is used by the auth smoke tests, the `try_recap.py`
+script, and ad-hoc browsing.
+
+| Field    | Value                       |
+|----------|-----------------------------|
+| Email    | `smoketest@example.com`     |
+| Username | `smoketester`               |
+| Password | `testpw1234`                |
+
+The user is **not** auto-created on a fresh DB. After a reset, recreate with:
+
+```bash
+curl -s -X POST http://localhost:8000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"smoketest@example.com","username":"smoketester","password":"testpw1234"}'
+```
+
+To verify the user exists:
+
+```bash
+docker compose exec sportsona-db psql -U sportsona_user -d sportsona \
+  -c "SELECT id, email, username FROM users WHERE email = 'smoketest@example.com';"
+```
+
+### Database credentials (local)
+
+| Field     | Value              |
+|-----------|--------------------|
+| Host      | localhost          |
+| Port      | 5432               |
+| Database  | sportsona          |
+| User      | sportsona_user     |
+| Password  | dev_password_123   |
+
+Override per-shell with `POSTGRES_USER` / `POSTGRES_PASSWORD` env vars (see
+`docker-compose.yml`).
+
 ## More detail
 
 - Backend reference & migration recipes: [`backend/README.md`](backend/README.md)
 - Frontend reference & yarn-only commands: [`web/README.md`](web/README.md)
-- Project plan: [`SPORTSONA_PROJECT_PLAN.md`](SPORTSONA_PROJECT_PLAN.md)
 
 ## Branding — "The Rise" rebrand
 
