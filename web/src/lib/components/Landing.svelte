@@ -1,7 +1,8 @@
 <script lang="ts">
   /**
    * Marketing landing for signed-out visitors — F1-first copy, every figure
-   * real. Committed grape ground (Inspiration Study move 06). The standings
+   * real. Grape ground in dark mode (Inspiration Study move 06), Sand in light —
+   * every colour goes through the scoped --l-* tokens below. The standings
    * and next-race surface is LIVE (title-math + calendar endpoints), so the
    * page updates itself when the product does (move 04: the interface is the
    * illustration). Full-bleed via the 100vw trick.
@@ -27,7 +28,7 @@
 
 <div
   class="landing"
-  style="width: 100vw; margin-left: calc(50% - 50vw); margin-top: -2rem; margin-bottom: -2rem; background: var(--sp-grape-900); color: var(--sp-sand-100)"
+  style="width: 100vw; margin-left: calc(50% - 50vw); margin-top: -2rem; margin-bottom: -2rem"
 >
   <!-- ══ HERO ══ -->
   <section class="in hero" id="top">
@@ -49,16 +50,16 @@
         <span class="r">{#if tm}Championship after round {tm.after_round}{:else}Formula 1 · {SEASON}{/if}</span>
       </div>
       <div class="g2">
-        <div class="tile" style="background: var(--sp-rose-500)">
+        <div class="tile" style="background: var(--sp-rose-500); box-shadow: none">
           <p class="tile__k" style="color: #7a2038">Stat of the day</p>
           <div class="sp-stat" style="font-size: 64px; color: #3a0c1c">5</div>
           <p class="tile__p" style="color: #5c1428"><b style="color: #3a0c1c">Hamilton</b> owns Spa: five Belgian Grand Prix wins since 2010, spanning 2010 to 2024.</p>
         </div>
         <div class="tile">
-          <p class="tile__k" style="color: var(--sp-teal-300)">Drivers' championship</p>
+          <p class="tile__k" style="color: var(--l-teal-text)">Drivers' championship</p>
           {#if tm}
             {#each tm.drivers.slice(0, 4) as d (d.driver_id)}
-              <div class="row"><span class="sp-fig" style="width: 18px; color: var(--sp-grape-200)">{d.position}</span><span class="n">{d.name}</span><span class="sp-fig s" style="font-size: 15px">{d.points}</span></div>
+              <div class="row"><span class="sp-fig" style="width: 18px; color: var(--l-muted)">{d.position}</span><span class="n">{d.name}</span><span class="sp-fig s" style="font-size: 15px">{d.points}</span></div>
             {/each}
           {:else}
             <p class="tile__p">Live standings load here.</p>
@@ -74,8 +75,8 @@
           {/if}
           {#if tm && !tm.clinched}
             <div style="display: flex; align-items: baseline; gap: 10px; margin-top: 14px">
-              <span class="sp-stat" style="font-size: 30px; color: var(--sp-rose-500)">{tm.still_alive}</span>
-              <span style="font-size: 12px; font-weight: 700; color: var(--sp-grape-200)">drivers can still win · {tm.remaining_rounds} rounds left</span>
+              <span class="sp-stat" style="font-size: 30px; color: var(--l-rose-fig)">{tm.still_alive}</span>
+              <span style="font-size: 12px; font-weight: 700; color: var(--l-muted)">drivers can still win · {tm.remaining_rounds} rounds left</span>
             </div>
           {:else if tm?.leader}
             <p class="tile__p" style="margin-top: 14px"><b>{tm.leader.name}</b> has clinched the title.</p>
@@ -101,9 +102,9 @@
         <div class="tile">
           <p class="tile__k">Why it stands out</p>
           <div class="rs">
-            <div><i style="color: var(--sp-volt-500)">↑</i><span>His five wins span a 14-year window, 2010 to 2024</span></div>
-            <div><i style="color: var(--sp-volt-500)">↑</i><span>Verstappen's three all came in a tight run, 2021 to 2023</span></div>
-            <div><i style="color: var(--sp-grape-200)">→</i><span>Vettel needed seven years (2011–2018) to collect his three</span></div>
+            <div><i style="color: var(--l-up)">↑</i><span>His five wins span a 14-year window, 2010 to 2024</span></div>
+            <div><i style="color: var(--l-up)">↑</i><span>Verstappen's three all came in a tight run, 2021 to 2023</span></div>
+            <div><i style="color: var(--l-muted)">→</i><span>Vettel needed seven years (2011–2018) to collect his three</span></div>
           </div>
         </div>
       </div>
@@ -136,7 +137,7 @@
         <p>After every race, a recap written around <b>your</b> drivers — the reason it happened, not just the classification — in three minutes. Plus one stat each morning you didn't know.</p>
       </div>
       <div class="step__fig tile">
-        <p class="tile__k" style="color: var(--sp-rose-400)">Monaco Grand Prix · your recap</p>
+        <p class="tile__k" style="color: var(--l-rose-text)">Monaco Grand Prix · your recap</p>
         <p class="tile__t">Leclerc's Monaco nightmare, but Hamilton drags Ferrari home</p>
         <div class="sp-stat" style="font-size: 34px; margin-top: 14px">P2</div>
         <p class="tile__p">Antonelli converted pole into his fifth win of the season. Hamilton launched from P3 to P2, <b>6.2s</b> back — Ferrari's best Sunday of the year. Leclerc, from P4 on the grid, didn't see the flag.</p>
@@ -155,7 +156,7 @@
         <p class="tile__p">Hamilton, with <b>5</b> — ahead of Verstappen and Vettel on three each.</p>
         <div class="g2" style="grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 14px">
           <div class="fg"><div class="sp-stat" style="font-size: 24px">5</div><div class="fg__k">Hamilton</div></div>
-          <div class="fg"><div class="sp-stat" style="font-size: 24px; color: var(--sp-rose-500)">3</div><div class="fg__k">Verstappen · Vettel</div></div>
+          <div class="fg"><div class="sp-stat" style="font-size: 24px; color: var(--l-rose-fig)">3</div><div class="fg__k">Verstappen · Vettel</div></div>
         </div>
       </div>
     </div>
@@ -167,7 +168,7 @@
       <p class="eyebrow">Every answer shows its work</p>
       <h2 class="claim claim--wide">An AI that admits what it doesn't know.</h2>
       <p class="qual">Most sports AI answers in one confident tone whether the number is documented or guessed. Sportsona separates the three cases and labels them, every time. <b>You should always be able to see which parts to trust.</b></p>
-      <div class="surf" style="background: var(--sp-grape-900)">
+      <div class="surf" style="background: var(--l-bg)">
         <div class="surf__hd"><span>Ask</span><span class="r">A real answer, with its real sources</span></div>
         <p class="tile__t" style="font-size: 20px; max-width: 34ch">Who has the most Belgian Grand Prix wins since 2010?</p>
         <p class="tile__p" style="font-size: 15px; line-height: 1.68; max-width: 64ch; margin-top: 14px">Lewis Hamilton, with <b>5</b> Belgian Grand Prix victories between 2010 and 2024. Max Verstappen and Sebastian Vettel share second on <b>3</b> apiece. The query read every Belgian GP classification in the record and counted the winners.</p>
@@ -209,7 +210,7 @@
         <b>What's worth knowing today</b><span>One stat each morning you didn't know, with the evidence behind it.</span>
       </div>
       <div class="f">
-        <span class="ic" style="background: var(--sp-sand-100)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#211228" stroke-width="2.4" stroke-linecap="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>
+        <span class="ic" style="background: var(--l-chip); color: var(--l-chip-ink)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>
         <b>Whatever you ask</b><span>Records, head-to-heads, how Verstappen connects to Fangio in ten teammates — sourced, and honest about the gaps.</span>
       </div>
     </div>
@@ -266,93 +267,134 @@
 </div>
 
 <style>
-  .landing { font-family: 'Figtree', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  .landing a { color: var(--sp-rose-400); text-decoration: none; }
-  .landing a:hover { color: #f7b0c0; }
+  /* Page-scoped palette. Light mirrors the app's Sand surfaces; dark is the
+     original committed-grape ground. Rose/teal/volt FILLS stay on the raw
+     --sp-* tokens (same in both themes); anything used as TEXT goes through
+     a token here so it clears contrast on Sand (Rose 500 on Sand is 2.8:1). */
+  .landing {
+    --l-bg: var(--sp-sand-100);
+    --l-band: #e9e1ce;            /* Sand 200 */
+    --l-surf: #fbf7ef;            /* Sand 50 */
+    --l-tile: #ffffff;
+    --l-tile-line: #e9e1ce;       /* white tiles need an edge on Sand */
+    --l-inset: var(--sp-sand-100);
+    --l-line: #ddd3bc;
+    --l-ink: #211228;
+    --l-muted: var(--sp-sand-600);
+    --l-rose-text: var(--sp-rose-700);
+    --l-rose-fig: var(--sp-rose-700);
+    --l-teal-text: #0b6b5e;
+    --l-up: #5a6d0c;
+    --l-chip: var(--sp-grape-700);
+    --l-chip-ink: var(--sp-sand-100);
+    background: var(--l-bg);
+    color: var(--l-ink);
+    font-family: 'Figtree', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  :global(.dark) .landing {
+    --l-bg: var(--sp-grape-900);
+    --l-band: var(--sp-grape-800);
+    --l-surf: var(--sp-grape-800);
+    --l-tile: var(--sp-grape-700);
+    --l-tile-line: transparent;
+    --l-inset: var(--sp-grape-800);
+    --l-line: var(--sp-grape-600);
+    --l-ink: var(--sp-sand-100);
+    --l-muted: var(--sp-grape-200);
+    --l-rose-text: var(--sp-rose-400);
+    --l-rose-fig: var(--sp-rose-500);
+    --l-teal-text: var(--sp-teal-300);
+    --l-up: var(--sp-volt-500);
+    --l-chip: var(--sp-sand-100);
+    --l-chip-ink: #211228;
+  }
+  .landing a { color: var(--l-rose-text); text-decoration: none; }
+  .landing a:hover { color: var(--l-ink); }
   .in { max-width: 1120px; margin: 0 auto; padding: 96px 40px; }
   @media (max-width: 720px) { .in { padding: 64px 24px; } }
-  .band { background: var(--sp-grape-800); padding: 96px 0; }
+  .band { background: var(--l-band); padding: 96px 0; }
   @media (max-width: 720px) { .band { padding: 64px 0; } }
 
   .btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800; border: 0; border-radius: 999px; padding: 12px 21px; cursor: pointer; transition: background .16s cubic-bezier(.2,.7,.3,1); }
   .landing .btn--rose { background: var(--sp-rose-500); color: #3a0c1c; } .landing .btn--rose:hover { background: var(--sp-rose-400); color: #3a0c1c; }
-  .landing .btn--ghost { background: transparent; color: var(--sp-sand-100); box-shadow: inset 0 0 0 1px var(--sp-grape-600); } .landing .btn--ghost:hover { background: var(--sp-grape-800); color: var(--sp-sand-100); }
+  .landing .btn--ghost { background: transparent; color: var(--l-ink); box-shadow: inset 0 0 0 1px var(--l-line); } .landing .btn--ghost:hover { background: var(--l-band); color: var(--l-ink); }
   .btn--lg { font-size: 15px; padding: 15px 26px; }
 
-  .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--sp-rose-400); margin: 0; }
+  .eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: var(--l-rose-text); margin: 0; }
   .claim { font-size: 42px; font-weight: 800; letter-spacing: -.036em; line-height: 1.06; margin: 16px 0 0; max-width: 19ch; text-wrap: balance; }
   .claim--wide { max-width: 26ch; }
-  .qual { font-size: 16px; line-height: 1.68; color: var(--sp-grape-200); margin: 18px 0 0; max-width: 56ch; text-wrap: pretty; }
-  .qual b { color: var(--sp-sand-100); }
+  .qual { font-size: 16px; line-height: 1.68; color: var(--l-muted); margin: 18px 0 0; max-width: 56ch; text-wrap: pretty; }
+  .qual b { color: var(--l-ink); }
   .qual.big { font-size: 17.5px; max-width: 52ch; }
   @media (max-width: 720px) { .claim { font-size: 32px; max-width: none; } }
 
   .hero { padding-top: 104px; padding-bottom: 88px; }
   .h1 { font-size: 64px; font-weight: 800; letter-spacing: -.042em; line-height: 1.02; margin: 20px 0 0; max-width: 17ch; text-wrap: balance; }
-  .h1 em { font-style: normal; color: var(--sp-rose-500); }
+  .h1 em { font-style: normal; color: var(--l-rose-fig); }
   @media (max-width: 720px) { .h1 { font-size: 40px; max-width: none; } }
   .hact { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
-  .hnote { font-size: 12.5px; font-weight: 600; color: var(--sp-grape-200); margin: 18px 0 0; }
+  .hnote { font-size: 12.5px; font-weight: 600; color: var(--l-muted); margin: 18px 0 0; }
 
-  .surf { background: var(--sp-grape-800); border-radius: 26px; padding: 26px; margin-top: 48px; }
-  .surf__hd { display: flex; align-items: center; gap: 10px; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--sp-grape-200); margin-bottom: 18px; }
+  .surf { background: var(--l-surf); border-radius: 26px; padding: 26px; margin-top: 48px; }
+  .surf__hd { display: flex; align-items: center; gap: 10px; font-size: 10.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--l-muted); margin-bottom: 18px; }
   .surf__hd .r { margin-left: auto; font-weight: 700; letter-spacing: .04em; text-transform: none; font-size: 11.5px; }
   .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(268px, 1fr)); gap: 16px; }
-  .tile { background: var(--sp-grape-700); border-radius: 20px; padding: 20px; }
-  .tile__k { font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--sp-grape-200); margin: 0 0 10px; }
+  .tile { background: var(--l-tile); box-shadow: inset 0 0 0 1px var(--l-tile-line); border-radius: 20px; padding: 20px; }
+  .tile__k { font-size: 10px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: var(--l-muted); margin: 0 0 10px; }
   .tile__t { font-size: 17px; font-weight: 800; letter-spacing: -.022em; line-height: 1.24; margin: 0; text-wrap: balance; }
-  .tile__p { font-size: 13px; line-height: 1.55; color: var(--sp-grape-200); margin: 8px 0 0; }
-  .tile__p b { color: var(--sp-sand-100); }
-  .illus { font-size: 11px; font-weight: 700; color: var(--sp-grape-200); margin: 12px 0 0; font-style: italic; }
+  .tile__p { font-size: 13px; line-height: 1.55; color: var(--l-muted); margin: 8px 0 0; }
+  .tile__p b { color: var(--l-ink); }
+  .illus { font-size: 11px; font-weight: 700; color: var(--l-muted); margin: 12px 0 0; font-style: italic; }
 
-  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--sp-grape-600); }
+  .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--l-line); }
   .row:last-child { border-bottom: 0; padding-bottom: 0; }
-  .row .n { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--sp-sand-100); }
-  .row .s { font-size: 16px; color: var(--sp-sand-100); }
-  .row .sub { font-size: 11.5px; font-weight: 700; color: var(--sp-grape-200); }
+  .row .n { font-size: 13px; font-weight: 700; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--l-ink); }
+  .row .s { font-size: 16px; color: var(--l-ink); }
+  .row .sub { font-size: 11.5px; font-weight: 700; color: var(--l-muted); }
 
   .scr { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-  .scr .n { font-size: 76px; color: var(--sp-rose-500); }
+  .scr .n { font-size: 76px; color: var(--l-rose-fig); }
   .scr .vb { font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 6px 13px; border-radius: 999px; background: var(--sp-rose-500); color: #3a0c1c; }
   .rs { display: flex; flex-direction: column; gap: 9px; margin-top: 20px; }
-  .rs div { display: grid; grid-template-columns: 16px 1fr; gap: 11px; font-size: 14px; line-height: 1.55; color: var(--sp-grape-200); }
+  .rs div { display: grid; grid-template-columns: 16px 1fr; gap: 11px; font-size: 14px; line-height: 1.55; color: var(--l-muted); }
   .rs i { font-style: normal; font-weight: 900; font-size: 13px; }
 
   .prov { display: flex; flex-direction: column; margin-top: 6px; }
-  .pr { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--sp-grape-600); font-size: 13.5px; }
+  .pr { display: grid; grid-template-columns: 16px 1fr auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--l-line); font-size: 13.5px; }
   .pr:last-child { border-bottom: 0; }
   .pr .g { width: 9px; height: 9px; border-radius: 50%; }
-  .pr .l { color: var(--sp-grape-200); }
-  .pr .s { font-size: 11.5px; font-weight: 700; color: var(--sp-grape-200); }
-  .leg { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--sp-grape-600); font-size: 11.5px; font-weight: 700; color: var(--sp-grape-200); }
+  .pr .l { color: var(--l-muted); }
+  .pr .s { font-size: 11.5px; font-weight: 700; color: var(--l-muted); }
+  .leg { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--l-line); font-size: 11.5px; font-weight: 700; color: var(--l-muted); }
   .leg span { display: flex; align-items: center; gap: 7px; }
   .leg i { width: 8px; height: 8px; border-radius: 50%; display: block; }
 
-  .step { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1.05fr); gap: 34px; align-items: start; padding: 44px 0; border-top: 1px solid var(--sp-grape-600); }
+  .step { display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1.05fr); gap: 34px; align-items: start; padding: 44px 0; border-top: 1px solid var(--l-line); }
   @media (max-width: 900px) { .step { grid-template-columns: 44px minmax(0, 1fr); gap: 20px; } .step__fig { grid-column: 1 / -1; } }
-  .step__n { font-size: 15px; font-weight: 900; letter-spacing: -.02em; color: var(--sp-rose-500); }
+  .step__n { font-size: 15px; font-weight: 900; letter-spacing: -.02em; color: var(--l-rose-fig); }
   .step h3 { font-size: 25px; font-weight: 800; letter-spacing: -.028em; line-height: 1.16; margin: 0; text-wrap: balance; }
-  .step p { font-size: 14.5px; line-height: 1.66; color: var(--sp-grape-200); margin: 12px 0 0; text-wrap: pretty; }
-  .step p b { color: var(--sp-sand-100); }
+  .step p { font-size: 14.5px; line-height: 1.66; color: var(--l-muted); margin: 12px 0 0; text-wrap: pretty; }
+  .step p b { color: var(--l-ink); }
   /* Tile typography must win over the step's prose rule (.step p). */
-  .landing .step .tile__k { font-size: 10px; font-weight: 800; letter-spacing: .15em; line-height: 1.4; color: var(--sp-grape-200); margin: 0 0 10px; }
+  .landing .step .tile__k { font-size: 10px; font-weight: 800; letter-spacing: .15em; line-height: 1.4; color: var(--l-muted); margin: 0 0 10px; }
   .landing .step .tile__p { font-size: 13px; line-height: 1.55; margin: 8px 0 0; }
   .landing .step .tile__t { font-size: 17px; }
-  .fg { background: var(--sp-grape-800); border-radius: 10px; padding: 12px; }
-  .fg__k { font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--sp-grape-200); margin-top: 3px; }
+  .fg { background: var(--l-inset); border-radius: 10px; padding: 12px; }
+  .fg__k { font-size: 9.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--l-muted); margin-top: 3px; }
 
   .four { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 16px; margin-top: 44px; }
-  .f { background: var(--sp-grape-800); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 9px; min-height: 168px; }
+  .f { background: var(--l-surf); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 9px; min-height: 168px; }
   .f .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 4px; }
   .f b { font-size: 16.5px; font-weight: 800; letter-spacing: -.022em; }
-  .f span:not(.ic) { font-size: 13.5px; line-height: 1.55; color: var(--sp-grape-200); margin-top: auto; }
+  .f span:not(.ic) { font-size: 13.5px; line-height: 1.55; color: var(--l-muted); margin-top: auto; }
 
   .obj { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 44px; }
-  .o { background: var(--sp-grape-700); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+  .o { background: var(--l-tile); box-shadow: inset 0 0 0 1px var(--l-tile-line); border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
   .o .q { font-size: 17px; font-weight: 800; letter-spacing: -.022em; line-height: 1.3; margin: 0; text-wrap: balance; }
-  .o .a { font-size: 13.5px; line-height: 1.62; color: var(--sp-grape-200); margin: 0; }
-  .o .a b { color: var(--sp-sand-100); }
-  .o .lbl { font-size: 9.5px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; color: var(--sp-rose-400); }
+  .o .a { font-size: 13.5px; line-height: 1.62; color: var(--l-muted); margin: 0; }
+  .o .a b { color: var(--l-ink); }
+  .o .lbl { font-size: 9.5px; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; color: var(--l-rose-text); }
 
   .cta { text-align: center; }
   .cta .claim { max-width: 24ch; margin-left: auto; margin-right: auto; font-size: 46px; }
@@ -360,10 +402,10 @@
   .cta .hact { justify-content: center; }
   @media (max-width: 720px) { .cta .claim { font-size: 32px; } }
 
-  .foot { border-top: 1px solid var(--sp-grape-600); padding-top: 36px; padding-bottom: 56px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-  .foot .brand { color: var(--sp-sand-100); }
-  .foot .c { font-size: 12.5px; color: var(--sp-grape-200); }
+  .foot { border-top: 1px solid var(--l-line); padding-top: 36px; padding-bottom: 56px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .foot .brand { color: var(--l-ink); }
+  .foot .c { font-size: 12.5px; color: var(--l-muted); }
   .foot .fl { margin-left: auto; display: flex; gap: 22px; }
-  .foot .fl a { font-size: 12.5px; font-weight: 600; color: var(--sp-grape-200); }
-  .foot .fl a:hover { color: var(--sp-sand-100); }
+  .foot .fl a { font-size: 12.5px; font-weight: 600; color: var(--l-muted); }
+  .foot .fl a:hover { color: var(--l-ink); }
 </style>
