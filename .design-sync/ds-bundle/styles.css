@@ -1,0 +1,111 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Sportsona — design-system entry stylesheet (brand v3, "The Rise").
+
+   This is the single stylesheet a Claude Design canvas receives; everything
+   the brand needs chains from the @imports below. Read tokens/tokens.css for
+   the full palette and guidelines/brand.md for usage.
+   GENERATED from web/src/app.css — regenerate rather than hand-edit.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@import './fonts/fonts.css';
+@import './tokens/tokens.css';
+
+/* ── Tailwind v4 token mapping ────────────────────────────────────────────
+   If the canvas compiles Tailwind v4, this maps the HSL variables to colour
+   utilities (`bg-primary`, `text-foreground`, `border-border`, …). In a
+   non-Tailwind canvas this block is ignored; style with `hsl(var(--token))`. */
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-info: hsl(var(--info));
+  --color-info-foreground: hsl(var(--info-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  /* Chart / sport-tagging series — non-semantic, never a page background. */
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  /* Figtree only — 300–900. Inter + Alfa Slab One are gone. */
+  --font-sans: 'Figtree', system-ui, sans-serif;
+
+  --radius: 0.875rem;
+}
+
+/* ── Base defaults ────────────────────────────────────────────────────────
+   A bare canvas already reads as Sportsona: Figtree on Sand (Grape in dark). */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+html,
+body {
+  font-family: 'Figtree', system-ui, sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Numerals ─────────────────────────────────────────────────────────────
+   Figtree has no scoreboard presence by default — numbers have to ask for it.
+   `.sp-stat` on any hero figure (40px+), `.sp-fig` on anything in a column. */
+.sp-stat {
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+.sp-fig {
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/* Rose as TEXT. Rose 500 on Sand is 2.8:1 — fails. Rose text on light uses
+   Rose 700 (5.4:1); on dark it becomes the lifted accent. Fills keep
+   `--accent` / `--sp-rose-500`. */
+.text-rose-ink {
+  color: #b0304f;
+}
+.dark .text-rose-ink {
+  color: hsl(var(--accent));
+}

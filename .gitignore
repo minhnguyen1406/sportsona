@@ -55,6 +55,8 @@ SPORTSONA_WEEK1_PLAN.md
 # Design-iteration scratch images (root-level only)
 /*.png
 
-# Design-sync build artifact (regenerated from web/src/app.css)
-ds-bundle/
+# Root-level design-sync scratch output. The real bundle lives in
+# .design-sync/ds-bundle/ and IS tracked (its README + guidelines are
+# hand-written, so it can't be regenerated from app.css alone).
+/ds-bundle/
 Sportsona_Rebrand.zip

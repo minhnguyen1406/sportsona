@@ -1,0 +1,138 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Sportsona design tokens — brand v3, "The Rise".
+   GENERATED from web/src/app.css (the source of truth). Do not hand-edit;
+   regenerate when the app's tokens change.
+
+   Electric Grape + Rose on warm Sand. No gradients: dark depth comes from
+   flat Grape 900 → 800 → 700 steps.
+
+   Semantic colours are bare HSL channel triples so they compose with alpha:
+   `hsl(var(--primary) / 0.5)`. Wrap with hsl() to use.
+   Two themes: :root (light, Sand) and .dark (Grape). Toggle with the `dark`
+   class on <html>.
+   ──────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Surfaces — warm Sand, not white. A cool grey next to grape reads clinical. */
+  --background: 42 41% 92%; /* @kind color */ /* Sand 100  #F3EEE2 */
+  --foreground: 281 38% 11%; /* @kind color */ /* Ink       #211228 */
+  --card: 40 60% 96%; /* @kind color */ /* Sand 50   #FBF7EF */
+  --card-foreground: 281 38% 11%; /* @kind color */
+  --popover: 40 60% 96%; /* @kind color */
+  --popover-foreground: 281 38% 11%; /* @kind color */
+
+  /* Primary = Electric Grape #2A1247 — every dark surface, primary actions */
+  --primary: 267 60% 17%; /* @kind color */
+  --primary-foreground: 42 41% 92%; /* @kind color */
+
+  /* Secondary / muted = warm sand fills + secondary text */
+  --secondary: 42 38% 86%; /* @kind color */ /* Sand 200  #E9E1CE */
+  --secondary-foreground: 281 38% 11%; /* @kind color */
+  --muted: 42 38% 86%; /* @kind color */
+  --muted-foreground: 37 17% 32%; /* @kind color */ /* Sand 600  #5F5443 */
+
+  /* Accent = Rose #E8607F — "you", and "now". One per view. */
+  --accent: 346 75% 64%; /* @kind color */
+  --accent-foreground: 340 65% 14%; /* @kind color */ /* #3A0C1C — dark text ON rose */
+
+  /* Destructive is now its OWN colour, no longer shared with primary */
+  --destructive: 353 64% 47%; /* @kind color */ /* Flag Red  #C42B3E */
+  --destructive-foreground: 40 60% 96%; /* @kind color */
+
+  /* Status */
+  --success: 148 67% 37%; /* @kind color */ /* #1F9E5A */
+  --success-foreground: 40 60% 96%; /* @kind color */
+  --warning: 40 91% 47%; /* @kind color */ /* #E39A0B */
+  --warning-foreground: 281 38% 11%; /* @kind color */
+  --info: 210 54% 50%; /* @kind color */ /* #3B7FC4 */
+  --info-foreground: 40 60% 96%; /* @kind color */
+
+  /* Lines / focus */
+  --border: 42 38% 86%; /* @kind color */
+  --input: 42 38% 86%; /* @kind color */
+  --ring: 346 75% 64%; /* @kind color */ /* rose focus ring */
+
+  /* Chart / sport tagging — non-semantic series colours. */
+  --chart-1: 267 60% 17%; /* @kind color */ /* Grape 700 */
+  --chart-2: 172 79% 40%; /* @kind color */ /* Court Teal #16B8A3 */
+  --chart-3: 71 77% 57%; /* @kind color */ /* Volt       #C8E63C */
+  --chart-4: 346 75% 64%; /* @kind color */ /* Rose */
+  --chart-5: 266 34% 63%; /* @kind color */ /* Grape 300 */
+
+  --radius: 0.875rem; /* @kind radius */
+
+}
+
+.dark {
+  /* Flat steps. No gradient. Depth comes from 900 → 800 → 700. */
+  --background: 269 67% 8%; /* @kind color */ /* Grape 900 #150724 */
+  --foreground: 42 41% 92%; /* @kind color */ /* Sand 100  #F3EEE2 */
+  --card: 267 61% 13%; /* @kind color */ /* Grape 800 #1F0D35 */
+  --card-foreground: 42 41% 92%; /* @kind color */
+  --popover: 267 60% 17%; /* @kind color */ /* Grape 700 */
+  --popover-foreground: 42 41% 92%; /* @kind color */
+
+  /* On dark, rose becomes primary — grape is the surface, so it can't also
+  be the action. This is the one role that swaps between themes. */
+  --primary: 346 75% 64%; /* @kind color */
+  --primary-foreground: 340 65% 14%; /* @kind color */
+
+  --secondary: 267 46% 24%; /* @kind color */ /* Grape 600 */
+  --secondary-foreground: 42 41% 92%; /* @kind color */
+  --muted: 267 46% 24%; /* @kind color */
+  --muted-foreground: 266 34% 80%; /* @kind color */ /* Grape 200 — 9.2:1. Guide v3: the safe small-text colour on dark (eyebrows, captions, table labels); Grape 300 only passes at ≥13px */
+
+  --accent: 347 78% 73%; /* @kind color */ /* Rose 400 — lifted for dark surfaces */
+  --accent-foreground: 340 65% 14%; /* @kind color */
+
+  --destructive: 353 70% 62%; /* @kind color */
+  --destructive-foreground: 269 67% 8%; /* @kind color */
+
+  --success: 148 55% 60%; /* @kind color */
+  --success-foreground: 269 67% 8%; /* @kind color */
+  --warning: 40 88% 66%; /* @kind color */
+  --warning-foreground: 269 67% 8%; /* @kind color */
+  --info: 210 60% 73%; /* @kind color */
+  --info-foreground: 269 67% 8%; /* @kind color */
+
+  --border: 267 46% 24%; /* @kind color */
+  --input: 267 46% 24%; /* @kind color */
+  --ring: 346 75% 64%; /* @kind color */
+
+  --chart-1: 42 41% 92%; /* @kind color */
+  --chart-2: 172 79% 40%; /* @kind color */
+  --chart-3: 71 77% 57%; /* @kind color */
+  --chart-4: 346 75% 64%; /* @kind color */
+  --chart-5: 266 34% 63%; /* @kind color */
+
+}
+
+/* Raw brand scale — fixed hexes that DON'T flip with theme. Use for
+   always-grape chrome and for rose/teal/volt fills that read the same in
+   light and dark. */
+:root {
+  --sp-grape-900: #150724; /* @kind color */
+  --sp-grape-800: #1f0d35; /* @kind color */
+  --sp-grape-700: #2a1247; /* @kind color */
+  --sp-grape-600: #3a2159; /* @kind color */
+  --sp-grape-300: #9b7fc0; /* @kind color */
+  --sp-grape-200: #c9badd; /* @kind color */
+  --sp-rose-700: #b0304f; /* @kind color */
+  --sp-rose-500: #e8607f; /* @kind color */
+  --sp-rose-400: #f0839b; /* @kind color */
+  --sp-rose-100: #fce4ea; /* @kind color */
+  --sp-sand-100: #f3eee2; /* @kind color */
+  --sp-sand-500: #8a7a60; /* @kind color */ /* swatch/icon fills only — never text (3.6:1) */
+  --sp-sand-600: #5f5443; /* @kind color */
+  --sp-teal-500: #16b8a3; /* @kind color */
+  --sp-teal-300: #7fdacd; /* @kind color */
+  --sp-volt-500: #c8e63c; /* @kind color */
+  --sp-warning: #e39a0b; /* @kind color */
+  --sp-on-rose: #3a0c1c; /* @kind color */ /* dark ink for text on a rose fill */
+
+  /* Radii — v3 is rounder. r-lg (cards) 20px, r-md 14px, pill. */
+  --radius-md: 14px; /* @kind radius */
+  --radius-lg: 20px; /* @kind radius */
+  --radius-xl: 26px; /* @kind radius */
+
+}
