@@ -567,6 +567,23 @@ class TestSyncRaceResultsModern:
         assert rr.points == 25.0
         assert rr.status == "Finished"
 
+    def test_creates_mid_season_driver_and_constructor(self, service, mock_fastf1, db_session):
+        """A driver absent from the round-1 entry list must be inserted with
+        the result — on Postgres the missing row fails the driver_id FK."""
+        _seed_race(db_session, service)
+        mock_fastf1.get_session.return_value = fastf1_session(fastf1_session_results([
+            {"first_name": "Ryo", "last_name": "Hirakawa", "team": "Haas F1 Team",
+             "country_code": "JPN"},
+        ]))
+
+        service._sync_race_results_modern(2024, 1)
+
+        driver = db_session.query(Driver).filter_by(driver_id="ryo_hirakawa").one()
+        assert driver.family_name == "Hirakawa"
+        assert driver.nationality == "JPN"
+        assert db_session.query(Constructor).filter_by(constructor_id="haas_f1_team").count() == 1
+        assert db_session.query(RaceResult).one().driver_id == "ryo_hirakawa"
+
     def test_dnf_yields_status_R_and_null_position(self, service, mock_fastf1, db_session):
         _seed_race(db_session, service)
         mock_fastf1.get_session.return_value = fastf1_session(fastf1_session_results([

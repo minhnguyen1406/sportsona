@@ -195,6 +195,24 @@ class F1DataService:
             return ergast_id
         return long_form
 
+    def _resolve_modern_participant(self, row) -> tuple[str, str]:
+        """Resolve a FastF1 session-results row to (driver_id, constructor_id),
+        inserting either row if it is unknown.
+
+        The modern entry list is built from round 1 only, so a driver who first
+        appears mid-season (reserve call-up, seat swap) is not in f1.drivers
+        when their result arrives — without this the insert fails the
+        driver_id foreign key and the whole round is lost. The Ergast paths
+        already ensure both rows per result; this keeps FastF1 symmetrical.
+        """
+        driver_id = self._resolve_driver_id("", row['FirstName'], row['LastName'])
+        constructor_id = self._resolve_constructor_id("", row['TeamName'])
+        self._ensure_driver_exists(
+            driver_id, row['FirstName'], row['LastName'], row.get('CountryCode')
+        )
+        self._ensure_constructor_exists(constructor_id, row['TeamName'])
+        return driver_id, constructor_id
+
     def sync_season(self, year: int) -> dict:
         """Sync all data for a season."""
         self._ensure_season(year)
@@ -522,14 +540,11 @@ class F1DataService:
         for _, result in session.results.iterrows():
             # Same ASCII-folding resolver as _sync_drivers_modern so race
             # results land on the same id as the driver row.
-            driver_id = self._resolve_driver_id(
-                "", result['FirstName'], result['LastName']
-            )
+            driver_id, constructor_id = self._resolve_modern_participant(result)
             if driver_id in seen:
                 continue  # two upstream rows collapsed onto one canonical id
             seen.add(driver_id)
 
-            constructor_id = self._resolve_constructor_id("", result['TeamName'])
             position = result['Position']
             grid = result['GridPosition'] if 'GridPosition' in result else None
 
@@ -648,14 +663,11 @@ class F1DataService:
         seen: set[str] = set()
 
         for _, result in session.results.iterrows():
-            driver_id = self._resolve_driver_id(
-                "", result['FirstName'], result['LastName']
-            )
+            driver_id, constructor_id = self._resolve_modern_participant(result)
             if driver_id in seen:
                 continue
             seen.add(driver_id)
 
-            constructor_id = self._resolve_constructor_id("", result['TeamName'])
             position = result['Position']
             grid = result['GridPosition'] if 'GridPosition' in result else None
 
@@ -715,12 +727,11 @@ class F1DataService:
         seen: set[str] = set()
 
         for _, row in session.results.iterrows():
-            driver_id = self._resolve_driver_id("", row['FirstName'], row['LastName'])
+            driver_id, constructor_id = self._resolve_modern_participant(row)
             if driver_id in seen:
                 continue
             seen.add(driver_id)
 
-            constructor_id = self._resolve_constructor_id("", row['TeamName'])
             position = row['Position']
 
             results.append(self._upsert_qualifying_result(race.id, driver_id, {
